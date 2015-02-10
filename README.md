@@ -1,4 +1,4 @@
-# Connect-SDK-Android-API-Sampler_IntegrationTest
+# Connect-SDK-Android-IntegrationTest
 The IntegrationTest for Connect-SDK-Android-API-Sampler App contains a set of automatic test for checking all features via UI in the same way like users do it.
 
 
