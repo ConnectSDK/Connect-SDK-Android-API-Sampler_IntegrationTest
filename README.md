@@ -1,2 +1,2 @@
-# Connect-SDK-iOS-API-Sampler_IntegrationTest
-IntegrationTest for Connect-SDK-iOS-API-Sampler App
+# Connect-SDK-Android-API-Sampler_IntegrationTest
+IntegrationTest for Connect-SDK-Android-API-Sampler App
