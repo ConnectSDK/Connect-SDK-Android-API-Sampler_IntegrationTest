@@ -2,6 +2,8 @@ package com.connectsdk.sampler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import junit.framework.Assert;
@@ -17,6 +19,7 @@ import android.widget.ListView;
 
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.device.DevicePicker;
+import com.connectsdk.discovery.DiscoveryManager;
 import com.connectsdk.sampler.MainActivity;
 import com.connectsdk.sampler.R;
 import com.connectsdk.sampler.SectionsPagerAdapter;
@@ -33,24 +36,30 @@ import com.robotium.solo.Solo;
 public class ConnectableDeviceTest extends
 		ActivityInstrumentationTestCase2<MainActivity> {
 	
-	Button photo = null;
-	Button close = null;
-	Button video = null;
-	Button audio = null;
-	Button play = null;
-	Button pause = null;
-	Button stop = null;
-	Button rewind = null;
-	Button fastforward = null;
-	Button mediaInfo = null;
-	
 
+	TestUtil testUtil;
 	private Solo solo;
 	private SectionsPagerAdapter sectionAdapter;
 	private AlertDialog alertDialog;
 	private ConnectableDevice mTV;
 	private  DevicePicker devicePkr;
 	private ConnectivityManager cmngr;
+	List<String> expectedLauncherCapabilities = new ArrayList<String>();
+	List<String> expectedMediaPlayerCapabilities = new ArrayList<String>();
+	List<String> expectedMediaControlCapabilities = new ArrayList<String>();
+	List<String> expectedPlayListControlCapabilities = new ArrayList<String>();
+	List<String> expectedVolumeControlCapabilities = new ArrayList<String>();
+	
+	List<String> expectedTVControlCapabilities = new ArrayList<String>();
+	List<String> expectedExternalInputControlCapabilities = new ArrayList<String>();
+	List<String> expectedMouseControlCapabilities = new ArrayList<String>();
+	List<String> expectedTextInputControlCapabilities = new ArrayList<String>();
+	List<String> expectedPowerControlCapabilities = new ArrayList<String>();
+	List<String> expectedKeyControlCapabilities = new ArrayList<String>();
+	List<String> expectedToastControlCapabilities = new ArrayList<String>();
+	List<String> expectedWebAppLauncherCapabilities = new ArrayList<String>();
+	
+	
 	
 	public ConnectableDeviceTest() {
 		super("com.connectsdk.sampler", MainActivity.class);
@@ -64,10 +73,27 @@ public class ConnectableDeviceTest extends
 		mTV = ((MainActivity)getActivity()).mTV;
 		devicePkr = ((MainActivity)getActivity()).dp; 
 		cmngr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+		testUtil = new TestUtil();
+		Collection<ConnectableDevice> devices=DiscoveryManager.getInstance().getCompatibleDevices().values();
+		Thread.sleep(10000);
+		testUtil.getDeviceWithServices(devices);
+		expectedLauncherCapabilities = Arrays.asList(testUtil.getCapabilities("Launcher"));
+		expectedMediaPlayerCapabilities = Arrays.asList(testUtil.getCapabilities("MediaPlayer"));
+		expectedMediaControlCapabilities = Arrays.asList(testUtil.getCapabilities("MediaControl"));
+		expectedTVControlCapabilities = Arrays.asList(testUtil.getCapabilities("TVControl"));
+		expectedVolumeControlCapabilities = Arrays.asList(testUtil.getCapabilities("VolumeControl"));
+		expectedExternalInputControlCapabilities = Arrays.asList(testUtil.getCapabilities("ExternalInputControl"));
+		expectedMouseControlCapabilities = Arrays.asList(testUtil.getCapabilities("MouseControl"));
+		expectedTextInputControlCapabilities = Arrays.asList(testUtil.getCapabilities("TextInputControl"));
+		expectedPowerControlCapabilities = Arrays.asList(testUtil.getCapabilities("PowerControl"));
+		expectedKeyControlCapabilities = Arrays.asList(testUtil.getCapabilities("KeyControl"));
+		expectedPlayListControlCapabilities = Arrays.asList(testUtil.getCapabilities("PlayListControl"));
+		expectedToastControlCapabilities = Arrays.asList(testUtil.getCapabilities("ToastControl"));
+		expectedWebAppLauncherCapabilities = Arrays.asList(testUtil.getCapabilities("WebAppLauncher"));
+				
 	}
-
 	
-	public void testConnectedDeviceSupportedServices() throws InterruptedException, ClassNotFoundException{
+	public void testConnectedDeviceSupportedServices() throws InterruptedException{
 		View actionconnect;
 		ListView view;
 				
@@ -89,7 +115,6 @@ public class ConnectableDeviceTest extends
 			Assert.assertTrue(alertDialog.isShowing());
 				
 			view = devicePkr.getListView();			
-			Thread.sleep(1000);
 			
 			if(i <= count){
 				solo.clickInList(i);
@@ -102,10 +127,8 @@ public class ConnectableDeviceTest extends
 			mTV = ((MainActivity)getActivity()).mTV;
 			Assert.assertTrue(mTV.isConnected());
 			
-			Assert.assertFalse(mTV.getCapabilities().isEmpty());
-			
-			Thread.sleep(2000);
-			
+			Assert.assertFalse(mTV.getCapabilities().isEmpty());			
+			Thread.sleep(2000);			
 			Assert.assertNotNull(mTV.getConnectedServiceNames());			
 						
 			sectionAdapter = ((MainActivity)getActivity()).mSectionsPagerAdapter;
@@ -162,7 +185,7 @@ public class ConnectableDeviceTest extends
 			
 	   	}
 	
-	public void testSupportedCapabilityForDeviceConnected() throws InterruptedException, ClassNotFoundException{
+	public void testSupportedCapabilityForDeviceConnected() throws InterruptedException {
 		View actionconnect;
 		ListView view;				
 			
@@ -184,220 +207,333 @@ public class ConnectableDeviceTest extends
 			Assert.assertTrue(alertDialog.isShowing());
 				
 			view = devicePkr.getListView();			
-			Thread.sleep(3000);
 			
-			//Verify only if connected with Wifi then list can be 0 or greater.
-			if(cmngr.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI){
-				Assert.assertEquals(ConnectivityManager.TYPE_WIFI, cmngr.getActiveNetworkInfo().getType());
-				//When not connected WiFi
-				if(cmngr.getActiveNetworkInfo().isConnected()){
-					Assert.assertTrue(cmngr.getActiveNetworkInfo().isConnected());
-					if(null != view){
-						count=view.getCount();
-						Assert.assertTrue(count >= 0);
-					}
-				}
-			}	
+			if(testUtil.verifyWifiConnected(cmngr) && null != view){
+				
+				count=view.getCount();
+				Assert.assertTrue(count >= 0);
+			
+		    }
+			ArrayList<DeviceService> foundServices = new ArrayList<DeviceService>();
+			Boolean hasDIALCapabilities = Boolean.FALSE;
+			Boolean hasAirPlayCapabilities = Boolean.FALSE;
+			Boolean hasDLNACapabilities = Boolean.FALSE;
+			Boolean hasNetcastCapabilities = Boolean.FALSE;
+			Boolean hasWebOSCapabilities = Boolean.FALSE;
+			Boolean hasRokuCapabilities = Boolean.FALSE;		
+					
 			
 			if(i <= count){
 				solo.clickInList(i);
+				Thread.sleep(10000);
+				
+				mTV = ((MainActivity)getActivity()).mTV;
+				Assert.assertTrue(mTV.isConnected());			
+				Assert.assertFalse(mTV.getCapabilities().isEmpty());
+				
+				Thread.sleep(2000);						
+				
+				Assert.assertNotNull(mTV.getServices());
+				
+				if(testUtil.deviceWithDIALService != null && testUtil.deviceWithDIALService.contains(mTV)){
+					DeviceService DIALService = mTV.getServiceByName("DIAL");
+					foundServices.add(DIALService);
+					
+					Assert.assertTrue(DIALService.isConnected());
+					
+					List<String> actualDeviceDIALCapabilities = DIALService.getCapabilities();
+					Assert.assertFalse(actualDeviceDIALCapabilities.isEmpty());
+					
+										
+					if (!Collections.disjoint(actualDeviceDIALCapabilities, expectedLauncherCapabilities))
+					{
+						hasDIALCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasDIALCapabilities);
+						
+					}
+					
+					Assert.assertTrue("The Connected Device Must Support atleast one Launcher/DIAL capability.",hasDIALCapabilities);
+					
+				} 
+				if(testUtil.deviceWithAirplayService != null && testUtil.deviceWithAirplayService.contains(mTV)){
+					DeviceService AirPlayService = mTV.getServiceByName("AirPlay");
+					foundServices.add(AirPlayService);
+					
+					Assert.assertTrue(AirPlayService.isConnected());
+					
+					List<String> actualDeviceAirPlayCapabilities = AirPlayService.getCapabilities();
+					Assert.assertFalse(actualDeviceAirPlayCapabilities.isEmpty());
+					
+										
+					if (!Collections.disjoint(actualDeviceAirPlayCapabilities, expectedMediaPlayerCapabilities))
+					{
+						hasAirPlayCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasAirPlayCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceAirPlayCapabilities, expectedMediaControlCapabilities))
+					{
+						hasAirPlayCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasAirPlayCapabilities);
+						
+					}
+					
+					Assert.assertTrue("The Connected Device Must Support atleast one AirPlay capability.",hasAirPlayCapabilities);
+					
+				}
+				if(testUtil.deviceWithDLNAService != null && testUtil.deviceWithDLNAService.contains(mTV)){
+					DeviceService DLNAService = mTV.getServiceByName("DLNA");
+					foundServices.add(DLNAService);
+					
+					Assert.assertTrue(DLNAService.isConnected());
+					
+					List<String> actualDeviceDLNACapabilities = DLNAService.getCapabilities();
+					Assert.assertFalse(actualDeviceDLNACapabilities.isEmpty());
+					
+										
+					if (!Collections.disjoint(actualDeviceDLNACapabilities, expectedMediaPlayerCapabilities))
+					{
+						hasDLNACapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasDLNACapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceDLNACapabilities, expectedMediaControlCapabilities))
+					{
+						hasDLNACapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasDLNACapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceDLNACapabilities, expectedPlayListControlCapabilities))
+					{
+						hasDLNACapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasDLNACapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceDLNACapabilities, expectedVolumeControlCapabilities))
+					{
+						hasDLNACapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasDLNACapabilities);
+						
+					}
+					
+					
+					Assert.assertTrue("The Connected Device Must Support atleast one AirPlay capability.",hasDLNACapabilities);
+					
+				}
+				if(testUtil.deviceWithNetcastTVService != null && testUtil.deviceWithNetcastTVService.contains(mTV)){
+					DeviceService NetcastTVService = mTV.getServiceByName("Netcast TV");
+					foundServices.add(NetcastTVService);
+					
+					Assert.assertTrue(NetcastTVService.isConnected());
+					
+					List<String> actualDeviceNetcastTVCapabilities = NetcastTVService.getCapabilities();
+					Assert.assertFalse(actualDeviceNetcastTVCapabilities.isEmpty());
+					
+										
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedMediaPlayerCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedMediaControlCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedLauncherCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedTVControlCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedVolumeControlCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedExternalInputControlCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedMouseControlCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedTextInputControlCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedPowerControlCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceNetcastTVCapabilities, expectedKeyControlCapabilities))
+					{
+						hasNetcastCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasNetcastCapabilities);
+						
+					}
+					
+					
+					Assert.assertTrue("The Connected Device Must Support atleast one AirPlay capability.",hasNetcastCapabilities);
+					
+				}if(testUtil.deviceWithWebOSTVService != null && testUtil.deviceWithWebOSTVService.contains(mTV)){
+					DeviceService WebOSTVService = mTV.getServiceByName("webOS TV");
+					foundServices.add(WebOSTVService);
+					
+					Assert.assertTrue(WebOSTVService.isConnected());
+					
+					List<String> actualDeviceWebOSTVCapabilities = WebOSTVService.getCapabilities();
+					Assert.assertFalse(actualDeviceWebOSTVCapabilities.isEmpty());
+					
+										
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedMediaPlayerCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedMediaControlCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedLauncherCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedTVControlCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedVolumeControlCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedExternalInputControlCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedMouseControlCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedTextInputControlCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedPowerControlCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedKeyControlCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedToastControlCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceWebOSTVCapabilities, expectedWebAppLauncherCapabilities))
+					{
+						hasWebOSCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasWebOSCapabilities);
+						
+					}
+					
+					
+					Assert.assertTrue("The Connected Device Must Support atleast one Webos capability.",hasWebOSCapabilities);
+					
+				}
+				if(testUtil.deviceWithRokuService != null && testUtil.deviceWithRokuService.contains(mTV)){
+					DeviceService RokuService = mTV.getServiceByName("Roku");
+					foundServices.add(RokuService);
+					
+					Assert.assertTrue(RokuService.isConnected());
+					
+					List<String> actualDeviceRokuCapabilities = RokuService.getCapabilities();
+					Assert.assertFalse(actualDeviceRokuCapabilities.isEmpty());
+					
+										
+					if (!Collections.disjoint(actualDeviceRokuCapabilities, expectedMediaPlayerCapabilities))
+					{
+						hasRokuCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasRokuCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceRokuCapabilities, expectedMediaControlCapabilities))
+					{
+						hasRokuCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasRokuCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceRokuCapabilities, expectedLauncherCapabilities))
+					{
+						hasRokuCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasRokuCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceRokuCapabilities, expectedTextInputControlCapabilities))
+					{
+						hasRokuCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasRokuCapabilities);
+						
+					}
+					if (!Collections.disjoint(actualDeviceRokuCapabilities, expectedKeyControlCapabilities))
+					{
+						hasRokuCapabilities = Boolean.TRUE;	
+						Assert.assertTrue(hasRokuCapabilities);
+						
+					}
+					
+					
+					Assert.assertTrue("The Connected Device Must Support atleast one AirPlay capability.",hasNetcastCapabilities);
+					
+				}
+				
+				Assert.assertTrue(foundServices.size() > 0);
+				
 				} else {
 					break;
 				}			
 			
-			Thread.sleep(2000);
-			
-			mTV = ((MainActivity)getActivity()).mTV;
-			Assert.assertTrue(mTV.isConnected());			
-			Assert.assertFalse(mTV.getCapabilities().isEmpty());
-			
-			Thread.sleep(2000);			
-					
-			ArrayList<DeviceService> foundServices = new ArrayList<DeviceService>();
-			
-			Assert.assertNotNull(mTV.getServices());
-			
-			
-			for (DeviceService service : mTV.getServices()) {
-				
-								
-				if (DIALService.class.isAssignableFrom(service.getClass())) {
-					foundServices.add((DIALService) service);
-					Assert.assertTrue(service.isConnected());					
-					
-					List<String> actualDIALCapabilities = service.getCapabilities();
-					Assert.assertFalse(actualDIALCapabilities.isEmpty());					
-										
-					Boolean hasDIALCapabilities = Boolean.FALSE;
-					
-					for (String string : actualDIALCapabilities) {
-						if(string.equalsIgnoreCase("Launcher.App") || string.equalsIgnoreCase("Launcher.App.Params") || string.equalsIgnoreCase("Launcher.App.Close") 
-								|| string.equalsIgnoreCase("Launcher.AppState")){
-							String[] LauncherCapabilities = { "Launcher.App", "Launcher.App.Params", "Launcher.App.Close", "Launcher.AppState"};
-							List<String> expectedLauncherCapabilities = Arrays.asList(LauncherCapabilities);
-							hasDIALCapabilities = Boolean.TRUE;	
-							Assert.assertTrue(actualDIALCapabilities.containsAll(expectedLauncherCapabilities));
-							
-						} 
-						if(string.equalsIgnoreCase("Launcher.Amazon") || string.equalsIgnoreCase("Launcher.Amazon.Params")){
-							String[] AmazonCapabilities = { "Launcher.Amazon", "Launcher.Amazon.Params"};
-							List<String> expectedAmazonCapabilities = Arrays.asList(AmazonCapabilities);
-							hasDIALCapabilities = Boolean.TRUE;
-							Assert.assertTrue(actualDIALCapabilities.containsAll(expectedAmazonCapabilities));
-							
-						}
-						if(string.equalsIgnoreCase("Launcher.YouTube") || string.equalsIgnoreCase("Launcher.YouTube.Params")){
-							String[] YoutubeCapabilities = { "Launcher.YouTube", "Launcher.YouTube.Params"};
-							List<String> expectedYoutubeCapabilities = Arrays.asList(YoutubeCapabilities);
-							hasDIALCapabilities = Boolean.TRUE;
-							Assert.assertTrue(actualDIALCapabilities.containsAll(expectedYoutubeCapabilities));
-							
-						}
-						if(string.equalsIgnoreCase("Launcher.Netflix") || string.equalsIgnoreCase("Launcher.Netflix.Params")){
-							String[] NetflixCapabilities = { "Launcher.Netflix", "Launcher.Netflix.Params"};
-							List<String> expectedNetflixCapabilities = Arrays.asList(NetflixCapabilities);
-							hasDIALCapabilities = Boolean.TRUE;
-							Assert.assertTrue(actualDIALCapabilities.containsAll(expectedNetflixCapabilities));
-							hasDIALCapabilities = Boolean.TRUE;
-						}
-						
-					}
-					Assert.assertTrue(hasDIALCapabilities);
-					
-				
-					
-				}else if(DLNAService.class.isAssignableFrom(service.getClass())) {
-					foundServices.add((DLNAService) service);
-					Assert.assertTrue(service.isConnected());
-					
-					List<String> actualDLNAcapabilities = service.getCapabilities();
-					Assert.assertFalse(actualDLNAcapabilities.isEmpty());
-					String[] DLNA = { "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe", "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Seek", "MediaControl.Position", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.PlayState.Subscribe", "VolumeControl.Set", "VolumeControl.Get", "VolumeControl.UpDown", "VolumeControl.Subscribe", "VolumeControl.Mute.Get", "VolumeControl.Mute.Set", "VolumeControl.Mute.Subscribe"};
-					List<String> expectedDLNACapabilities = Arrays.asList(DLNA);
-					
-					
-					
-					Assert.assertTrue(actualDLNAcapabilities.containsAll(expectedDLNACapabilities));
-					
-					Boolean hasDLNACapabilities = Boolean.FALSE;
-					
-					for (String string : actualDLNAcapabilities) {
-						
-					if(string.equalsIgnoreCase("MediaPlayer.Display.Image") || string.equalsIgnoreCase("MediaPlayer.Display.Video") || string.equalsIgnoreCase("MediaPlayer.Display.Audio") 
-							|| string.equalsIgnoreCase("MediaPlayer.Close") || string.equalsIgnoreCase("MediaPlayer.MetaData.Title") || string.equalsIgnoreCase("MediaPlayer.MetaData.MimeType")
-							|| string.equalsIgnoreCase("MediaPlayer.MediaInfo.Get") || string.equalsIgnoreCase("MediaPlayer.MediaInfo.Subscribe")){
-						
-						String[] MediaPlayerCapabilities = { "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe"};
-						List<String> expectedMediaPlayerCapabilities = Arrays.asList(MediaPlayerCapabilities);
-						hasDLNACapabilities = Boolean.TRUE;	
-						
-						Assert.assertTrue(actualDLNAcapabilities.containsAll(expectedMediaPlayerCapabilities));
-						
-					} 
-					if(string.equalsIgnoreCase("MediaControl.Play") || string.equalsIgnoreCase("MediaControl.Pause") || string.equalsIgnoreCase("MediaControl.Stop") 
-							|| string.equalsIgnoreCase("MediaControl.Seek") || string.equalsIgnoreCase("MediaControl.Position") || string.equalsIgnoreCase("MediaControl.Duration")
-							|| string.equalsIgnoreCase("MediaControl.PlayState") || string.equalsIgnoreCase("MediaControl.PlayState.Subscribe")){
-						
-						String[] MediaControlCapabilities = { "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Seek", "MediaControl.Position", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.PlayState.Subscribe"};
-						List<String> expectedMediaControlCapabilities = Arrays.asList(MediaControlCapabilities);
-						hasDLNACapabilities = Boolean.TRUE;
-						
-						Assert.assertTrue(actualDLNAcapabilities.containsAll(expectedMediaControlCapabilities));
-						
-					}
-					if(string.equalsIgnoreCase("VolumeControl.Set") || string.equalsIgnoreCase("VolumeControl.Get") || string.equalsIgnoreCase("VolumeControl.UpDown") 
-							|| string.equalsIgnoreCase("VolumeControl.Mute.Get") || string.equalsIgnoreCase("VolumeControl.Subscribe") || string.equalsIgnoreCase("VolumeControl.Mute.Set")
-							|| string.equalsIgnoreCase("VolumeControl.Mute.Subscribe")){
-						
-						String[] VolumeControlCapabilities = { "VolumeControl.Set", "VolumeControl.Get", "VolumeControl.UpDown", "VolumeControl.Subscribe", "VolumeControl.Mute.Get", "VolumeControl.Mute.Set", "VolumeControl.Mute.Subscribe" };
-						List<String> expectedVolumeControlCapabilities = Arrays.asList(VolumeControlCapabilities);
-						hasDLNACapabilities = Boolean.TRUE;
-						
-						Assert.assertTrue(actualDLNAcapabilities.containsAll(expectedVolumeControlCapabilities));
-						
-					}
-					
-					
-					}
-					Assert.assertTrue(hasDLNACapabilities);
-					
-				}else if(WebOSTVService.class.isAssignableFrom(service.getClass())) {
-					foundServices.add((WebOSTVService) service);
-					Assert.assertTrue(service.isConnected());
-					
-					List<String> actualWebOSTVcapabilities = service.getCapabilities();
-					Assert.assertFalse(actualWebOSTVcapabilities.isEmpty());					
-					
-					String[] WebOSTV = { "TextInputControl.Send", "TextInputControl.Enter", "TextInputControl.Delete", "TextInputControl.Subscribe", "MouseControl.Connect", "MouseControl.Disconnect", "MouseControl.Click", "MouseControl.Move", "MouseControl.Scroll", "KeyControl.Up", "KeyControl.Down", "KeyControl.Left", "KeyControl.Right", "KeyControl.OK", "KeyControl.Back", "KeyControl.Home", "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.Description", "MediaPlayer.MetaData.Thumbnail", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe", "Launcher.App", "Launcher.App.Params", "Launcher.App.Close", "Launcher.App.List", "Launcher.Browser", "Launcher.Browser.Params", "Launcher.Hulu", "Launcher.Hulu.Params", "Launcher.Netflix", "Launcher.Netflix.Params", "Launcher.YouTube", "Launcher.YouTube.Params", "Launcher.AppStore", "Launcher.AppStore.Params", "Launcher.AppState", "Launcher.AppState.Subscribe", "Launcher.RunningApp", "Launcher.RunningApp.Subscribe", "TVControl.Channel.Get", "TVControl.Channel.Set", "TVControl.Channel.Up", "TVControl.Channel.Down", "TVControl.Channel.List", "TVControl.Channel.Subscribe", "TVControl.Program.Get", "TVControl.Program.List", "TVControl.Program.Subscribe", "TVControl.Program.List.Subscribe", "TVControl.3D.Get", "TVControl.3D.Set", "TVControl.3D.Subscribe", "ExternalInputControl.Picker.Launch", "ExternalInputControl.Picker.Close", "ExternalInputControl.List", "ExternalInputControl.Set", "VolumeControl.Get", "VolumeControl.Set", "VolumeControl.UpDown", "VolumeControl.Subscribe", "VolumeControl.Mute.Get", "VolumeControl.Mute.Set", "VolumeControl.Mute.Subscribe", "ToastControl.Show", "ToastControl.Show.Clickable.App", "ToastControl.Show.Clickable.App.Params", "ToastControl.Show.Clickable.URL", "PowerControl.Off", "WebAppLauncher.Launch", "WebAppLauncher.Launch.Params", "WebAppLauncher.Message.Send", "WebAppLauncher.Message.Receive", "WebAppLauncher.Message.Send.JSON", "WebAppLauncher.Message.Receive.JSON", "WebAppLauncher.Connect", "WebAppLauncher.Disconnect", "WebAppLauncher.Join", "WebAppLauncher.Close", "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Rewind", "MediaControl.FastForward", "MediaControl.Seek", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.PlayState.Subscribe", "MediaControl.Position"};
-					List<String> expectedWebOSTVCapabilities = Arrays.asList(WebOSTV);
-					
-					
-					
-					Assert.assertTrue(actualWebOSTVcapabilities.containsAll(expectedWebOSTVCapabilities));
-					
-				}else if(AirPlayService.class.isAssignableFrom(service.getClass())) {
-					foundServices.add((AirPlayService) service);
-					Assert.assertTrue(service.isConnected());
-					
-					List<String> actualAirPlaycapabilities = service.getCapabilities();
-					Assert.assertFalse(actualAirPlaycapabilities.isEmpty());
-					
-					String[] AirPlay = { "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.Description", "MediaPlayer.MetaData.Thumbnail", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe", "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Position", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.Seek", "MediaControl.Rewind", "MediaControl.FastForward"};
-					List<String> expectedAirPlaycapabilities = Arrays.asList(AirPlay);
-					
-					Assert.assertTrue(actualAirPlaycapabilities.containsAll(expectedAirPlaycapabilities));
-					
-					Boolean hasAirPlayCapabilities = Boolean.FALSE;
-					
-					for (String string : actualAirPlaycapabilities) {
-						
-					if(string.equalsIgnoreCase("MediaPlayer.Display.Image") || string.equalsIgnoreCase("MediaPlayer.Display.Video") || string.equalsIgnoreCase("MediaPlayer.Display.Audio") 
-							|| string.equalsIgnoreCase("MediaPlayer.Close") || string.equalsIgnoreCase("MediaPlayer.MetaData.Title") || string.equalsIgnoreCase("MediaPlayer.MetaData.Description")
-							|| string.equalsIgnoreCase("MediaPlayer.MetaData.Thumbnail") || string.equalsIgnoreCase("MediaPlayer.MetaData.MimeType") || string.equalsIgnoreCase("MediaPlayer.MediaInfo.Get") 
-							|| string.equalsIgnoreCase("MediaPlayer.MediaInfo.Subscribe")){
-						
-						String[] MediaPlayerCapabilities = { "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.Description", "MediaPlayer.MetaData.Thumbnail", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe"};
-						List<String> expectedMediaPlayerCapabilities = Arrays.asList(MediaPlayerCapabilities);
-						hasAirPlayCapabilities = Boolean.TRUE;	
-						
-						Assert.assertTrue(actualAirPlaycapabilities.containsAll(expectedMediaPlayerCapabilities));
-						
-					}
-					if(string.equalsIgnoreCase("MediaControl.Play") || string.equalsIgnoreCase("MediaControl.Pause") || string.equalsIgnoreCase("MediaControl.Stop") 
-							|| string.equalsIgnoreCase("MediaControl.Seek") || string.equalsIgnoreCase("MediaControl.Position") || string.equalsIgnoreCase("MediaControl.Duration")
-							|| string.equalsIgnoreCase("MediaControl.PlayState") || string.equalsIgnoreCase("MediaControl.Rewind") || string.equalsIgnoreCase("MediaControl.FastForward")){
-						
-						String[] MediaControlCapabilities = { "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Position", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.Seek", "MediaControl.Rewind", "MediaControl.FastForward"};
-						List<String> expectedMediaControlCapabilities = Arrays.asList(MediaControlCapabilities);
-						hasAirPlayCapabilities = Boolean.TRUE;
-						
-						Assert.assertTrue(actualAirPlaycapabilities.containsAll(expectedMediaControlCapabilities));
-						
-					}
-					Assert.assertTrue(hasAirPlayCapabilities);
-					}
-					
-				}else if(NetcastTVService.class.isAssignableFrom(service.getClass())) {
-					foundServices.add((NetcastTVService) service);
-					Assert.assertTrue(service.isConnected());
-					
-					List<String> actualNetcastTVcapabilities = service.getCapabilities();
-					Assert.assertFalse(actualNetcastTVcapabilities.isEmpty());
-					
-				}else if(RokuService.class.isAssignableFrom(service.getClass())) {
-					foundServices.add((RokuService) service);
-					Assert.assertTrue(service.isConnected());
-					
-					List<String> actualRokucapabilities = service.getCapabilities();
-					Assert.assertFalse(actualRokucapabilities.isEmpty());
-					
-				}
-			}
-			
-			Assert.assertFalse(foundServices.isEmpty());
-			Assert.assertTrue(foundServices.size() > 0);
-			
-			
+
 			
 			actionconnect = solo.getView(R.id.action_connect);
 			solo.clickOnView(actionconnect);

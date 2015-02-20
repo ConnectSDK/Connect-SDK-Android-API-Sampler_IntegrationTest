@@ -12,7 +12,6 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.test.ActivityInstrumentationTestCase2;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ListView;
 
 import com.connectsdk.device.ConnectableDevice;
@@ -21,6 +20,7 @@ import com.connectsdk.discovery.DiscoveryManager;
 import com.connectsdk.sampler.fragments.MediaPlayerFragment;
 import com.connectsdk.sampler.util.TestResponseObject;
 import com.connectsdk.service.DeviceService;
+import com.connectsdk.service.sessions.LaunchSession;
 import com.robotium.solo.Solo;
 
 public class AirPlayServiceTest extends
@@ -29,7 +29,6 @@ public class AirPlayServiceTest extends
 	List<ConnectableDevice> deviceWithAirplayService = null;
 	TestUtil testUtil;
 	
-
 	private Solo solo;
 	private SectionsPagerAdapter sectionAdapter;
 	private AlertDialog alertDialog;
@@ -40,22 +39,9 @@ public class AirPlayServiceTest extends
 	List<String> expectedMediaPlayerCapabilities = new ArrayList<String>();
 	List<String> expectedMediaControlCapabilities = new ArrayList<String>();
 	
-	public final static String Display_Image = "MediaPlayer.Display.Image";
-	public final static String Display_Video = "MediaPlayer.Display.Video";
-	public final static String Display_Audio = "MediaPlayer.Display.Audio";
-	public final static String Close = "MediaPlayer.Close";
-	
-	public final static String MetaData_Title = "MediaPlayer.MetaData.Title";
-	public final static String MetaData_Description = "MediaPlayer.MetaData.Description";
-	public final static String MetaData_Thumbnail = "MediaPlayer.MetaData.Thumbnail";
-	public final static String MetaData_MimeType = "MediaPlayer.MetaData.MimeType";
-	
-	public final static String MediaInfo_Get = "MediaPlayer.MediaInfo.Get";
-	public final static String MediaInfo_Subscribe = "MediaPlayer.MediaInfo.Subscribe";
-	
-	Button photo = null;
 	MediaPlayerFragment mediaplayerfragment;
 	TestResponseObject responseObject;
+	public static LaunchSession launchSession;
 	
 	
 	public AirPlayServiceTest() {
@@ -78,6 +64,7 @@ public class AirPlayServiceTest extends
 		expectedMediaControlCapabilities = Arrays.asList(testUtil.getCapabilities("MediaControl"));
 		mediaplayerfragment = (MediaPlayerFragment) sectionAdapter.getFragment(0);
 		responseObject = mediaplayerfragment.testResponse;
+				
 	}
 	
 	public void testPickDeviceWithAirplayService() throws InterruptedException{
@@ -104,21 +91,14 @@ public class AirPlayServiceTest extends
 			Assert.assertTrue(alertDialog.isShowing());
 				
 			view = devicePkr.getListView();
-			Thread.sleep(1000);
 			
-			//Verify only if connected with Wifi then list can be 0 or greater.
-			if(cmngr.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI){
-				Assert.assertEquals(ConnectivityManager.TYPE_WIFI, cmngr.getActiveNetworkInfo().getType());
-				//When not connected WiFi
-				if(cmngr.getActiveNetworkInfo().isConnected()){
-					Assert.assertTrue(cmngr.getActiveNetworkInfo().isConnected());
-					if(null != view){
-						count=view.getCount();
-						Assert.assertTrue(count >= 0);
-					}
-				}
-			}		
+						
+			if(testUtil.verifyWifiConnected(cmngr) && null != view){
+				
+				count=view.getCount();
+				Assert.assertTrue(count >= 0);
 			
+		    }
 			if(i <= count){
 									
 				mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
@@ -155,15 +135,14 @@ public class AirPlayServiceTest extends
 			}
 	}
 		
-		public void testAirPlayServiceDisplayImageCapability() throws InterruptedException{
-			View actionconnect;
-			ListView view;
-			int count  = 0;
-			int i = 1;
+		public void testAPSMediaPlayerLaunchImage() throws InterruptedException{
 			
+			int count  = 0;
+			int i = 1;			
 			
 			while(true){
 			
+				View actionconnect;
 				//Verify getPickerDialog is not null and returns an instance of DevicePicker
 				devicePkr = ((MainActivity)getActivity()).dp;
 				Assert.assertNotNull(devicePkr);				
@@ -177,21 +156,15 @@ public class AirPlayServiceTest extends
 				
 				Assert.assertTrue(alertDialog.isShowing());
 					
-				view = devicePkr.getListView();
-				Thread.sleep(10000);
+				ListView view  = devicePkr.getListView();
 				
-				//Verify only if connected with Wifi then list can be 0 or greater.
-				if(cmngr.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI){
-					Assert.assertEquals(ConnectivityManager.TYPE_WIFI, cmngr.getActiveNetworkInfo().getType());
-					//When not connected WiFi
-					if(cmngr.getActiveNetworkInfo().isConnected()){
-						Assert.assertTrue(cmngr.getActiveNetworkInfo().isConnected());
-						if(null != view){
-							count=view.getCount();
-							Assert.assertTrue(count >= 0);
-						}
-					}
-				}		
+				
+				if(testUtil.verifyWifiConnected(cmngr) && null != view){
+					
+					count=view.getCount();
+					Assert.assertTrue(count >= 0);
+				
+			    }
 				
 				if(i <= count){
 										
@@ -209,29 +182,29 @@ public class AirPlayServiceTest extends
 						
 						List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
 						
-						if(actualDeviceAirPlayCapabilities.contains("MediaPlayer.Display.Image")){
+						if(actualDeviceAirPlayCapabilities.contains(TestConstants.Display_Image)){
 							Assert.assertTrue(true);
 						}
 						
-						getAssignedMediaButtons();
+						testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
 						
 						//Verify Photo or MediaPlayer.Display.Image Capability
-					    if(null != photo && actualDeviceAirPlayCapabilities.contains("MediaPlayer.Display.Image")){
-					    	Assert.assertTrue(photo.isEnabled());
+					    if(null != testUtil.photo && actualDeviceAirPlayCapabilities.contains(TestConstants.Display_Image)){
+					    	Assert.assertTrue(testUtil.photo.isEnabled());
 					    	
 					    	Assert.assertFalse(responseObject.isSuccess);
-							Assert.assertFalse(responseObject.httpResponseCode == 200);
-							Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase("default"));
+							Assert.assertFalse(responseObject.httpResponseCode == TestResponseObject.SuccessCode);
+							Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Default));
 							
-					    	solo.clickOnButton(photo.getText().toString());
+					    	solo.clickOnButton(testUtil.photo.getText().toString());
 					    	Thread.sleep(20000);
 					    	
 					    	responseObject = mediaplayerfragment.testResponse;
 					    	
 					    	Assert.assertTrue(responseObject.isSuccess);
-					    	Assert.assertTrue(responseObject.httpResponseCode == 200);
-							Assert.assertFalse(responseObject.responseMessage.equalsIgnoreCase("Default"));
-							Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase("ImageDisplayed"));
+					    	Assert.assertTrue(responseObject.httpResponseCode == TestResponseObject.SuccessCode);
+							Assert.assertFalse(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Default));
+							Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Display_image));
 							}
 					    } else{
 						i++;
@@ -248,37 +221,18 @@ public class AirPlayServiceTest extends
 					i = i+1;
 				}
 		}
-		
-		public void getAssignedMediaButtons(){
+        
+		public void testAPSMediaPlayerImageCloseCapability() throws InterruptedException{
 			
-			Button[] mediaButtons = mediaplayerfragment.buttons;
-			
-			Assert.assertTrue(mediaButtons.length > 0);
-			
-			for (Button button : mediaButtons) {
-				
-				Assert.assertNotNull(button.getText());
-				
-				if(button.getText().equals("Photo")){
-					this.photo = button;
-				}
-				
-			}
-		}
-		
-		public void testAirPlayServiceSupportForMediaPlayerCapability() throws InterruptedException{
-			View actionconnect;
-			ListView view;
 			int count  = 0;
-			int i = 1;
-			
+			int i = 1;			
 			
 			while(true){
 			
+				View actionconnect;
 				//Verify getPickerDialog is not null and returns an instance of DevicePicker
 				devicePkr = ((MainActivity)getActivity()).dp;
-				Assert.assertNotNull(devicePkr);
-				
+				Assert.assertNotNull(devicePkr);				
 				
 				if(!alertDialog.isShowing()){
 					
@@ -289,41 +243,308 @@ public class AirPlayServiceTest extends
 				
 				Assert.assertTrue(alertDialog.isShowing());
 					
-				view = devicePkr.getListView();
-				Thread.sleep(1000);
+				ListView view  = devicePkr.getListView();
 				
-				//Verify only if connected with Wifi then list can be 0 or greater.
-				if(cmngr.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI){
-					Assert.assertEquals(ConnectivityManager.TYPE_WIFI, cmngr.getActiveNetworkInfo().getType());
-					//When not connected WiFi
-					if(cmngr.getActiveNetworkInfo().isConnected()){
-						Assert.assertTrue(cmngr.getActiveNetworkInfo().isConnected());
-						if(null != view){
-							count=view.getCount();
-							Assert.assertTrue(count >= 0);
-						}
-					}
-				}		
+				
+				if(testUtil.verifyWifiConnected(cmngr) && null != view){
+					
+					count=view.getCount();
+					Assert.assertTrue(count >= 0);
+				
+			    }
 				
 				if(i <= count){
 										
 					mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
 					if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
 					
-						DeviceService deviceService = mTV.getServiceByName("AirPlay");
-						//Assert.assertTrue(deviceService.isConnected());
+						DeviceService deviceService = mTV.getServiceByName("AirPlay");										 	
+						solo.clickInList(i);
+						Thread.sleep(10000);						
+						Assert.assertTrue(mTV.isConnected());
+						Assert.assertTrue(deviceService.isConnected());						
+						
 						List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+						testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+						
+						//Verify Close when photo is launched
+					    if(null != testUtil.photo && actualDeviceAirPlayCapabilities.contains(TestConstants.Display_Image)){
+					    						
+					    	solo.clickOnButton(testUtil.photo.getText().toString());
+					    	Thread.sleep(10000);					    	
+					    	responseObject = mediaplayerfragment.testResponse;					    	
+					    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Display_image));
+							
+							 if(null != testUtil.close && actualDeviceAirPlayCapabilities.contains(TestConstants.Close)){
+							    	Assert.assertTrue(testUtil.close.isEnabled());							    							    	
+							    	solo.clickOnButton(testUtil.close.getText().toString());
+									Thread.sleep(1000);							    	
+							    	responseObject = mediaplayerfragment.testResponse;							    	
+							    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media));									
+									Assert.assertFalse(testUtil.close.isEnabled());
+									}							 
+							}	
+					  
+					    } else{
+						i++;
+						continue;
+					}
+				} else {
+					break;
+				}			
+				
+					
+					actionconnect = solo.getView(R.id.action_connect);
+					solo.clickOnView(actionconnect);
+					
+					i = i+1;
+				}
+		}
+		
+	public void testAPSMediaPlayerVideoCloseCapability() throws InterruptedException{
+		
+		int count  = 0;
+		int i = 1;			
+		
+		while(true){
+		
+			View actionconnect;
+			//Verify getPickerDialog is not null and returns an instance of DevicePicker
+			devicePkr = ((MainActivity)getActivity()).dp;
+			Assert.assertNotNull(devicePkr);				
+			
+			if(!alertDialog.isShowing()){
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);				
+				Thread.sleep(10000);
+			}
+			
+			Assert.assertTrue(alertDialog.isShowing());
+				
+			ListView view  = devicePkr.getListView();
+			
+			
+			if(testUtil.verifyWifiConnected(cmngr) && null != view){
+				
+				count=view.getCount();
+				Assert.assertTrue(count >= 0);
+			
+		    }
+			
+			if(i <= count){
+									
+				mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+				if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+				
+					DeviceService deviceService = mTV.getServiceByName("AirPlay");										 	
+					solo.clickInList(i);
+					Thread.sleep(10000);						
+					Assert.assertTrue(mTV.isConnected());
+					Assert.assertTrue(deviceService.isConnected());						
+					
+					List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+					testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+					
+					
+				    //Verify close when video is launched
+				    if(null != testUtil.video && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Video)){
+						
+				    	Assert.assertTrue(testUtil.video.isEnabled());
+				    	
+				    	solo.clickOnButton(testUtil.video.getText().toString());
+						Thread.sleep(20000);
+						
+				    						    	
+				    	responseObject = mediaplayerfragment.testResponse;					    	
+				    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video));
+				    	Assert.assertTrue(testUtil.play.isEnabled());
+				    	Assert.assertTrue(testUtil.pause.isEnabled());
+				    	Assert.assertTrue(testUtil.stop.isEnabled());
+				    	Assert.assertTrue(testUtil.rewind.isEnabled());
+				    	Assert.assertTrue(testUtil.fastforward.isEnabled());
+				    	Assert.assertTrue(testUtil.close.isEnabled());
+				    	
+				    	Assert.assertNotNull(MediaPlayerFragment.launchSession);
+				    	
+						 if(null != testUtil.close && actualDeviceAirPlayCapabilities.contains(TestConstants.Close)){
+						    	Assert.assertTrue(testUtil.close.isEnabled());							    							    	
+						    	solo.clickOnButton(testUtil.close.getText().toString());
+								Thread.sleep(1000);							    	
+						    	responseObject = mediaplayerfragment.testResponse;							    	
+						    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media));									
+								Assert.assertFalse(testUtil.close.isEnabled());
+						    	Assert.assertFalse(testUtil.play.isEnabled());
+						    	Assert.assertFalse(testUtil.pause.isEnabled());
+						    	Assert.assertFalse(testUtil.stop.isEnabled());
+						    	Assert.assertFalse(testUtil.rewind.isEnabled());
+						    	Assert.assertFalse(testUtil.fastforward.isEnabled());
+						    	Assert.assertNull(MediaPlayerFragment.launchSession);
+								
+								}							 
+						}
+				  
+				    } else{
+					i++;
+					continue;
+				}
+			} else {
+				break;
+			}			
+			
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);
+				
+				i = i+1;
+			}
+	}
+	
+public void testAPSMediaPlayerAudioCloseCapability() throws InterruptedException{
+		
+		int count  = 0;
+		int i = 1;			
+		
+		while(true){
+		
+			View actionconnect;
+			//Verify getPickerDialog is not null and returns an instance of DevicePicker
+			devicePkr = ((MainActivity)getActivity()).dp;
+			Assert.assertNotNull(devicePkr);				
+			
+			if(!alertDialog.isShowing()){
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);				
+				Thread.sleep(10000);
+			}
+			
+			Assert.assertTrue(alertDialog.isShowing());
+				
+			ListView view  = devicePkr.getListView();
+			
+			
+			if(testUtil.verifyWifiConnected(cmngr) && null != view){
+				
+				count=view.getCount();
+				Assert.assertTrue(count >= 0);
+			
+		    }
+			
+			if(i <= count){
+									
+				mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+				if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+				
+					DeviceService deviceService = mTV.getServiceByName("AirPlay");										 	
+					solo.clickInList(i);
+					Thread.sleep(10000);						
+					Assert.assertTrue(mTV.isConnected());
+					Assert.assertTrue(deviceService.isConnected());						
+					
+					List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+					testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+					
+					//Verify close when audio is launched
+				    if(null != testUtil.audio && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Audio)){
+						
+				    	Assert.assertTrue(testUtil.audio.isEnabled());
+				    	
+				    	solo.clickOnButton(testUtil.audio.getText().toString());
+						Thread.sleep(20000);
+						
+				    						    	
+				    	responseObject = mediaplayerfragment.testResponse;					    	
+				    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio));
+				    	Assert.assertTrue(testUtil.play.isEnabled());
+				    	Assert.assertTrue(testUtil.pause.isEnabled());
+				    	Assert.assertTrue(testUtil.stop.isEnabled());
+				    	Assert.assertTrue(testUtil.rewind.isEnabled());
+				    	Assert.assertTrue(testUtil.fastforward.isEnabled());
+				    	Assert.assertTrue(testUtil.close.isEnabled());
+				    	Assert.assertNotNull(MediaPlayerFragment.launchSession);
+				    	
+						 if(null != testUtil.close && actualDeviceAirPlayCapabilities.contains(TestConstants.Close)){
+						    	Assert.assertTrue(testUtil.close.isEnabled());							    							    	
+						    	solo.clickOnButton(testUtil.close.getText().toString());
+								Thread.sleep(1000);							    	
+						    	responseObject = mediaplayerfragment.testResponse;							    	
+						    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media));									
+								Assert.assertFalse(testUtil.close.isEnabled());
+						    	Assert.assertFalse(testUtil.play.isEnabled());
+						    	Assert.assertFalse(testUtil.pause.isEnabled());
+						    	Assert.assertFalse(testUtil.stop.isEnabled());
+						    	Assert.assertFalse(testUtil.rewind.isEnabled());
+						    	Assert.assertFalse(testUtil.fastforward.isEnabled());
+						    	Assert.assertNull(MediaPlayerFragment.launchSession);
+								
+								}							 
+						}
+				    } else{
+					i++;
+					continue;
+				}
+			} else {
+				break;
+			}			
+			
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);
+				
+				i = i+1;
+			}
+	}
+		
+			
+		public void testAPSSupportedMediaPlayerCapability() throws InterruptedException{
+			
+			int count  = 0;
+			int i = 1;			
+			
+			while(true){
+			
+				//Verify getPickerDialog is not null and returns an instance of DevicePicker
+				devicePkr = ((MainActivity)getActivity()).dp;
+				Assert.assertNotNull(devicePkr);
+				
+				View actionconnect;
+				
+				if(!alertDialog.isShowing()){
+					
+					actionconnect = solo.getView(R.id.action_connect);
+					solo.clickOnView(actionconnect);				
+					Thread.sleep(10000);
+				}
+				
+				Assert.assertTrue(alertDialog.isShowing());
+					
+				ListView view = devicePkr.getListView();
+				
+								
+				if(testUtil.verifyWifiConnected(cmngr) && null != view){
+					
+					count=view.getCount();
+					Assert.assertTrue(count >= 0);
+				
+			    }
+				if(i <= count){
+										
+					mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+					if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+					
+						DeviceService airPlayService = mTV.getServiceByName("AirPlay");
+						List<String> actualDeviceAirPlayCapabilities = airPlayService.getCapabilities();
+						Assert.assertFalse(actualDeviceAirPlayCapabilities.isEmpty());
 						
 						if (!Collections.disjoint(actualDeviceAirPlayCapabilities, expectedMediaPlayerCapabilities))
 						{
 							Assert.assertTrue(true);
-						}
+						}else{
+							Assert.assertTrue("The Connected Device must support atleast one AirPlay capabilities.", false);
 						
-						//Assert.assertTrue(actualDeviceAirPlayCapabilities.containsAll(expectedMediaPlayerCapabilities));
-						//Assert.assertTrue(actualDeviceAirPlayCapabilities.contains(expectedMediaControlCapabilities));
-				 
-						//solo.clickInList(i);
-						//Thread.sleep(10000);										
+						}			
+						
 						
 					}else{
 						i++;
@@ -333,32 +554,16 @@ public class AirPlayServiceTest extends
 					break;
 				}			
 					
-				//mTV = ((MainActivity)getActivity()).mTV;
-				//Assert.assertTrue(mTV.isConnected());
 				
-				//Assert.assertTrue(mTV.getCapabilities().contains("Image_Diaplay"));
-					
-				//verify connected service name is DIAL
-							
-				
-					//Assert.assertFalse(mTV.getCapabilities().isEmpty());
-					//Assert.assertTrue(mTV.getServiceByName("AirPlay").isConnected());
-					
-					//Thread.sleep(2000);
-					
 					actionconnect = solo.getView(R.id.action_connect);
 					solo.clickOnView(actionconnect);
 					
-					//Thread.sleep(5000);
-					
-					//Assert.assertFalse(mTV.isConnected());
 					i = i+1;
 				}
 		}
 		
-		public void testAirPlayServiceSupportForMediaControlCapability() throws InterruptedException{
-			View actionconnect;
-			ListView view;
+		public void testAPSSupportedMediaControlCapability() throws InterruptedException{
+			
 			int count  = 0;
 			int i = 1;
 			
@@ -369,6 +574,8 @@ public class AirPlayServiceTest extends
 				devicePkr = ((MainActivity)getActivity()).dp;
 				Assert.assertNotNull(devicePkr);				
 				
+				View actionconnect;
+				
 				if(!alertDialog.isShowing()){					
 					actionconnect = solo.getView(R.id.action_connect);
 					solo.clickOnView(actionconnect);				
@@ -377,37 +584,32 @@ public class AirPlayServiceTest extends
 				
 				Assert.assertTrue(alertDialog.isShowing());
 					
-				view = devicePkr.getListView();
-				Thread.sleep(1000);
+				ListView view = devicePkr.getListView();
 				
-				//Verify only if connected with Wifi then list can be 0 or greater.
-				if(cmngr.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI){
-					Assert.assertEquals(ConnectivityManager.TYPE_WIFI, cmngr.getActiveNetworkInfo().getType());
-					//When not connected WiFi
-					if(cmngr.getActiveNetworkInfo().isConnected()){
-						Assert.assertTrue(cmngr.getActiveNetworkInfo().isConnected());
-						if(null != view){
-							count=view.getCount();
-							Assert.assertTrue(count >= 0);
-						}
-					}
-				}		
+						
+				if(testUtil.verifyWifiConnected(cmngr) && null != view){
+					
+					count=view.getCount();
+					Assert.assertTrue(count >= 0);
+				
+			    }
 				
 				if(i <= count){
 										
 					mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
 					if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
 					
-						DeviceService deviceService = mTV.getServiceByName("AirPlay");
-						//Assert.assertTrue(deviceService.isConnected());
-						List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+						DeviceService airPlayService = mTV.getServiceByName("AirPlay");
+						List<String> actualDeviceAirPlayCapabilities = airPlayService.getCapabilities();
+						Assert.assertFalse(actualDeviceAirPlayCapabilities.isEmpty());
 						
-						
-						if (!Collections.disjoint(actualDeviceAirPlayCapabilities, expectedMediaControlCapabilities))
+						if (!Collections.disjoint(actualDeviceAirPlayCapabilities, expectedMediaPlayerCapabilities))
 						{
 							Assert.assertTrue(true);
-						 
-						}
+						}else{
+							Assert.assertTrue("The Connected Device must support atleast one AirPlay capabilities.", false);
+						
+						}	
 														
 						
 					}else{
@@ -425,7 +627,764 @@ public class AirPlayServiceTest extends
 				}
 		}
 		
+		public void testAPSMediaPlayerLaunchVideo() throws InterruptedException{
+			View actionconnect;
+			ListView view;
+			int count  = 0;
+			int i = 1;
+			
+			
+			while(true){
+			
+				//Verify getPickerDialog is not null and returns an instance of DevicePicker
+				devicePkr = ((MainActivity)getActivity()).dp;
+				Assert.assertNotNull(devicePkr);				
+				
+				if(!alertDialog.isShowing()){
+					
+					actionconnect = solo.getView(R.id.action_connect);
+					solo.clickOnView(actionconnect);				
+					Thread.sleep(10000);
+				}
+				
+				Assert.assertTrue(alertDialog.isShowing());
+					
+				view = devicePkr.getListView();
+				
+				
+				if(testUtil.verifyWifiConnected(cmngr) && null != view){
+					
+					count=view.getCount();
+					Assert.assertTrue(count >= 0);
+				
+			    }
+				if(i <= count){
+										
+					mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+					if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+					
+						DeviceService airPlayService = mTV.getServiceByName("AirPlay");
+										 	
+						solo.clickInList(i);
+						Thread.sleep(10000);
+						
+						Assert.assertTrue(mTV.isConnected());
+						Assert.assertTrue(airPlayService.isConnected());
+						
+						
+						List<String> actualDeviceAirPlayCapabilities = airPlayService.getCapabilities();
+						
+						if(actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Video)){
+							Assert.assertTrue(true);
+						}
+						
+						testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+						
+						//Verify Video or MediaPlayer.Play.Video Capability
+					    if(null != testUtil.video && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Video)){
+					    	Assert.assertTrue(testUtil.video.isEnabled());
+					    	
+					    	Assert.assertFalse(responseObject.isSuccess);
+							Assert.assertFalse(responseObject.httpResponseCode == TestResponseObject.SuccessCode);
+							Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Default));
+							
+					    	solo.clickOnButton(testUtil.video.getText().toString());
+					    	Thread.sleep(20000);
+					    	
+					    	responseObject = mediaplayerfragment.testResponse;
+					    	
+					    	Assert.assertTrue(responseObject.isSuccess);
+					    	Assert.assertTrue(responseObject.httpResponseCode == TestResponseObject.SuccessCode);
+							Assert.assertFalse(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Default));
+							Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video));
+							}
+					    } else{
+						i++;
+						continue;
+					}
+				} else {
+					break;
+				}			
+				
+					
+					actionconnect = solo.getView(R.id.action_connect);
+					solo.clickOnView(actionconnect);
+					
+					i = i+1;
+				}
+		}
+		
+		public void testAPSMediaPlayerLaunchAudio() throws InterruptedException{
+			View actionconnect;
+			ListView view;
+			int count  = 0;
+			int i = 1;
+			
+			
+			while(true){
+			
+				//Verify getPickerDialog is not null and returns an instance of DevicePicker
+				devicePkr = ((MainActivity)getActivity()).dp;
+				Assert.assertNotNull(devicePkr);				
+				
+				if(!alertDialog.isShowing()){
+					
+					actionconnect = solo.getView(R.id.action_connect);
+					solo.clickOnView(actionconnect);				
+					Thread.sleep(10000);
+				}
+				
+				Assert.assertTrue(alertDialog.isShowing());
+					
+				view = devicePkr.getListView();
+								
+				if(testUtil.verifyWifiConnected(cmngr) && null != view){
+					
+					count=view.getCount();
+					Assert.assertTrue(count >= 0);
+				
+			    }
+				if(i <= count){
+										
+					mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+					if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+					
+						DeviceService airPlayService = mTV.getServiceByName("AirPlay");
+										 	
+						solo.clickInList(i);
+						Thread.sleep(10000);
+						
+						Assert.assertTrue(mTV.isConnected());
+						Assert.assertTrue(airPlayService.isConnected());
+						
+						
+						List<String> actualDeviceAirPlayCapabilities = airPlayService.getCapabilities();
+						
+						if(actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Audio)){
+							Assert.assertTrue(true);
+						}
+						
+						testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+						
+						//Verify Audio or MediaPlayer.Play.Audio Capability
+					    if(null != testUtil.audio && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Audio)){
+					    	Assert.assertTrue(testUtil.audio.isEnabled());
+					    	
+					    	Assert.assertFalse(responseObject.isSuccess);
+							Assert.assertFalse(responseObject.httpResponseCode == TestResponseObject.SuccessCode);
+							Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Default));
+							
+					    	solo.clickOnButton(testUtil.audio.getText().toString());
+					    	Thread.sleep(20000);
+					    	
+					    	responseObject = mediaplayerfragment.testResponse;
+					    	
+					    	Assert.assertTrue(responseObject.isSuccess);
+					    	Assert.assertTrue(responseObject.httpResponseCode == TestResponseObject.SuccessCode);
+							Assert.assertFalse(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Default));
+							Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio));
+							}
+					    } else{
+						i++;
+						continue;
+					}
+				} else {
+					break;
+				}						
+					actionconnect = solo.getView(R.id.action_connect);
+					solo.clickOnView(actionconnect);
+					
+					i = i+1;
+				}
+		}
+		
+	public void testAPSMediaControlAudioPlayPauseCapability() throws InterruptedException{
+		
+		int count  = 0;
+		int i = 1;			
+		
+		while(true){
+		
+			View actionconnect;
+			//Verify getPickerDialog is not null and returns an instance of DevicePicker
+			devicePkr = ((MainActivity)getActivity()).dp;
+			Assert.assertNotNull(devicePkr);				
+			
+			if(!alertDialog.isShowing()){
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);				
+				Thread.sleep(10000);
+			}
+			
+			Assert.assertTrue(alertDialog.isShowing());
+				
+			ListView view  = devicePkr.getListView();
+			
+			
+			if(testUtil.verifyWifiConnected(cmngr) && null != view){
+				
+				count=view.getCount();
+				Assert.assertTrue(count >= 0);
+			
+		    }
+			
+			if(i <= count){
+									
+				mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+				if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+				
+					DeviceService deviceService = mTV.getServiceByName("AirPlay");										 	
+					solo.clickInList(i);
+					Thread.sleep(10000);						
+					Assert.assertTrue(mTV.isConnected());
+					Assert.assertTrue(deviceService.isConnected());						
+					
+					List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+					testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+					
+					
+					
+					//Verify pause when video is launched/play
+				    if(null != testUtil.audio && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Audio)){
+						
+				    	Assert.assertTrue(testUtil.audio.isEnabled());
+				    	
+				    	solo.clickOnButton(testUtil.audio.getText().toString());
+						Thread.sleep(20000);
+						
+				    						    	
+				    	responseObject = mediaplayerfragment.testResponse;					    	
+				    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio));
+				    	Assert.assertTrue(testUtil.play.isEnabled());
+				    	Assert.assertTrue(testUtil.pause.isEnabled());
+				    						    	
+						 if(null != testUtil.pause && actualDeviceAirPlayCapabilities.contains(TestConstants.Pause)){
+						    	Assert.assertTrue(testUtil.pause.isEnabled());							    							    	
+						    	solo.clickOnButton(testUtil.pause.getText().toString());
+								Thread.sleep(10000);							    	
+						    	responseObject = mediaplayerfragment.testResponse;							    	
+						    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Paused_Media));									
+						    	Assert.assertTrue(testUtil.play.isEnabled());
+						    	
+						    	//After pause click on play 
+						    	solo.clickOnButton(testUtil.play.getText().toString());
+								Thread.sleep(10000);
+								responseObject = mediaplayerfragment.testResponse;							    	
+						    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Played_Media));									
+								
+								}							 
+						}
+				  
+				    } else{
+					i++;
+					continue;
+				}
+			} else {
+				break;
+			}			
+			
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);
+				
+				i = i+1;
+			}
+	}
 	
+public void testAPSMediaControlVideoPlayPauseCapability() throws InterruptedException{
+			
+			int count  = 0;
+			int i = 1;			
+			
+			while(true){
+			
+				View actionconnect;
+				//Verify getPickerDialog is not null and returns an instance of DevicePicker
+				devicePkr = ((MainActivity)getActivity()).dp;
+				Assert.assertNotNull(devicePkr);				
+				
+				if(!alertDialog.isShowing()){
+					
+					actionconnect = solo.getView(R.id.action_connect);
+					solo.clickOnView(actionconnect);				
+					Thread.sleep(10000);
+				}
+				
+				Assert.assertTrue(alertDialog.isShowing());
+					
+				ListView view  = devicePkr.getListView();
+				
+				
+				if(testUtil.verifyWifiConnected(cmngr) && null != view){
+					
+					count=view.getCount();
+					Assert.assertTrue(count >= 0);
+				
+			    }
+				
+				if(i <= count){
+										
+					mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+					if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+					
+						DeviceService deviceService = mTV.getServiceByName("AirPlay");										 	
+						solo.clickInList(i);
+						Thread.sleep(10000);						
+						Assert.assertTrue(mTV.isConnected());
+						Assert.assertTrue(deviceService.isConnected());						
+						
+						List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+						testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+						
+						
+						
+						//Verify pause when video is launched/play
+					    if(null != testUtil.video && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Video)){
+    						
+					    	Assert.assertTrue(testUtil.video.isEnabled());
+					    	
+					    	solo.clickOnButton(testUtil.video.getText().toString());
+							Thread.sleep(20000);
+							
+					    						    	
+					    	responseObject = mediaplayerfragment.testResponse;					    	
+					    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video));
+					    	Assert.assertTrue(testUtil.play.isEnabled());
+					    	Assert.assertTrue(testUtil.pause.isEnabled());
+					    						    	
+							 if(null != testUtil.pause && actualDeviceAirPlayCapabilities.contains(TestConstants.Pause)){
+							    	Assert.assertTrue(testUtil.pause.isEnabled());							    							    	
+							    	solo.clickOnButton(testUtil.pause.getText().toString());
+									Thread.sleep(10000);							    	
+							    	responseObject = mediaplayerfragment.testResponse;							    	
+							    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Paused_Media));									
+							    	Assert.assertTrue(testUtil.play.isEnabled());
+							    	
+							    	//After pause click on play 
+							    	solo.clickOnButton(testUtil.play.getText().toString());
+									Thread.sleep(10000);
+									responseObject = mediaplayerfragment.testResponse;	
+									Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Played_Media));	
+									
+									}							 
+							}
+					
+					    } else{
+						i++;
+						continue;
+					}
+				} else {
+					break;
+				}			
+				
+					
+					actionconnect = solo.getView(R.id.action_connect);
+					solo.clickOnView(actionconnect);
+					
+					i = i+1;
+				}
+		}
 
+public void testAPSMediaControlVideoPlayRewindCapability() throws InterruptedException{
+	
+	int count  = 0;
+	int i = 1;			
+	
+	while(true){
+	
+		View actionconnect;
+		//Verify getPickerDialog is not null and returns an instance of DevicePicker
+		devicePkr = ((MainActivity)getActivity()).dp;
+		Assert.assertNotNull(devicePkr);				
+		
+		if(!alertDialog.isShowing()){
+			
+			actionconnect = solo.getView(R.id.action_connect);
+			solo.clickOnView(actionconnect);				
+			Thread.sleep(10000);
+		}
+		
+		Assert.assertTrue(alertDialog.isShowing());
+			
+		ListView view  = devicePkr.getListView();
+		
+		
+		if(testUtil.verifyWifiConnected(cmngr) && null != view){
+			
+			count=view.getCount();
+			Assert.assertTrue(count >= 0);
+		
+	    }
+		
+		if(i <= count){
+								
+			mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+			if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+			
+				DeviceService deviceService = mTV.getServiceByName("AirPlay");										 	
+				solo.clickInList(i);
+				Thread.sleep(10000);						
+				Assert.assertTrue(mTV.isConnected());
+				Assert.assertTrue(deviceService.isConnected());						
+				
+				List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+				testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+				
+				
+				
+				//Verify pause when video is launched/play
+			    if(null != testUtil.video && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Video)){
+					
+			    	Assert.assertTrue(testUtil.video.isEnabled());
+			    	
+			    	solo.clickOnButton(testUtil.video.getText().toString());
+					Thread.sleep(20000);
+					
+			    						    	
+			    	responseObject = mediaplayerfragment.testResponse;					    	
+			    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video));
+			    	Assert.assertTrue(testUtil.play.isEnabled());
+			    	AirPlayServiceTest.launchSession = MediaPlayerFragment.launchSession;
+			    	Assert.assertNotNull(launchSession);
+			    	Assert.assertTrue(testUtil.rewind.isEnabled());
+			    						    	
+					 if(null != testUtil.rewind && actualDeviceAirPlayCapabilities.contains(TestConstants.Rewind)){
+					    	Assert.assertTrue(testUtil.rewind.isEnabled());							    							    	
+					    	solo.clickOnButton(testUtil.rewind.getText().toString());
+							Thread.sleep(10000);							    	
+					    	responseObject = mediaplayerfragment.testResponse;							    	
+					    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Rewind_Media));									
+					    	Assert.assertTrue(testUtil.play.isEnabled());
+					    	Assert.assertNotNull(launchSession);
+					    	Assert.assertSame(launchSession ,MediaPlayerFragment.launchSession);
+					    	
+					    	//After pause click on play 
+					    	solo.clickOnButton(testUtil.play.getText().toString());
+							Thread.sleep(10000);
+							responseObject = mediaplayerfragment.testResponse;	
+							Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Played_Media));
+							Assert.assertNotNull(launchSession);
+					    	Assert.assertSame(launchSession ,MediaPlayerFragment.launchSession);
+							
+							}							 
+					}
+			
+			    } else{
+				i++;
+				continue;
+			}
+		} else {
+			break;
+		}			
+		
+			
+			actionconnect = solo.getView(R.id.action_connect);
+			solo.clickOnView(actionconnect);
+			
+			i = i+1;
+		}
+}
+
+	public void testAPSMediaControlAudioPlayRewindCapability() throws InterruptedException{
+		
+		int count  = 0;
+		int i = 1;			
+		
+		while(true){
+		
+			View actionconnect;
+			//Verify getPickerDialog is not null and returns an instance of DevicePicker
+			devicePkr = ((MainActivity)getActivity()).dp;
+			Assert.assertNotNull(devicePkr);				
+			
+			if(!alertDialog.isShowing()){
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);				
+				Thread.sleep(10000);
+			}
+			
+			Assert.assertTrue(alertDialog.isShowing());
+				
+			ListView view  = devicePkr.getListView();
+			
+			
+			if(testUtil.verifyWifiConnected(cmngr) && null != view){
+				
+				count=view.getCount();
+				Assert.assertTrue(count >= 0);
+			
+		    }
+			
+			if(i <= count){
+									
+				mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+				if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+				
+					DeviceService deviceService = mTV.getServiceByName("AirPlay");										 	
+					solo.clickInList(i);
+					Thread.sleep(10000);						
+					Assert.assertTrue(mTV.isConnected());
+					Assert.assertTrue(deviceService.isConnected());						
+					
+					List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+					testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+					
+					
+					
+					//Verify pause when video is launched/play
+				    if(null != testUtil.audio && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Audio)){
+						
+				    	Assert.assertTrue(testUtil.audio.isEnabled());
+				    	
+				    	solo.clickOnButton(testUtil.audio.getText().toString());
+						Thread.sleep(20000);
+						
+				    						    	
+				    	responseObject = mediaplayerfragment.testResponse;					    	
+				    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio));
+				    	Assert.assertTrue(testUtil.play.isEnabled());
+				    	AirPlayServiceTest.launchSession = MediaPlayerFragment.launchSession;
+				    	Assert.assertNotNull(launchSession);
+				    	Assert.assertTrue(testUtil.rewind.isEnabled());
+				    						    	
+						 if(null != testUtil.rewind && actualDeviceAirPlayCapabilities.contains(TestConstants.Rewind)){
+						    	Assert.assertTrue(testUtil.rewind.isEnabled());							    							    	
+						    	solo.clickOnButton(testUtil.rewind.getText().toString());
+								Thread.sleep(10000);							    	
+						    	responseObject = mediaplayerfragment.testResponse;							    	
+						    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Rewind_Media));									
+						    	Assert.assertTrue(testUtil.play.isEnabled());
+						    	Assert.assertNotNull(launchSession);
+						    	Assert.assertSame(launchSession ,MediaPlayerFragment.launchSession);
+						    	
+						    	//After pause click on play 
+						    	solo.clickOnButton(testUtil.play.getText().toString());
+								Thread.sleep(10000);
+								responseObject = mediaplayerfragment.testResponse;	
+								Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Played_Media));
+								Assert.assertNotNull(launchSession);
+						    	Assert.assertSame(launchSession ,MediaPlayerFragment.launchSession);
+								
+								}							 
+						}
+				
+				    } else{
+					i++;
+					continue;
+				}
+			} else {
+				break;
+			}			
+			
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);
+				
+				i = i+1;
+			}
+	}
+	
+	public void testAPSMediaControlVideoPlayFastForwardCapability() throws InterruptedException{
+		
+		int count  = 0;
+		int i = 1;			
+		
+		while(true){
+		
+			View actionconnect;
+			//Verify getPickerDialog is not null and returns an instance of DevicePicker
+			devicePkr = ((MainActivity)getActivity()).dp;
+			Assert.assertNotNull(devicePkr);				
+			
+			if(!alertDialog.isShowing()){
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);				
+				Thread.sleep(10000);
+			}
+			
+			Assert.assertTrue(alertDialog.isShowing());
+				
+			ListView view  = devicePkr.getListView();
+			
+			
+			if(testUtil.verifyWifiConnected(cmngr) && null != view){
+				
+				count=view.getCount();
+				Assert.assertTrue(count >= 0);
+			
+		    }
+			
+			if(i <= count){
+									
+				mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+				if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+				
+					DeviceService deviceService = mTV.getServiceByName("AirPlay");										 	
+					solo.clickInList(i);
+					Thread.sleep(10000);						
+					Assert.assertTrue(mTV.isConnected());
+					Assert.assertTrue(deviceService.isConnected());						
+					
+					List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+					testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+					
+					
+					
+					//Verify pause when video is launched/play
+				    if(null != testUtil.video && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Video)){
+						
+				    	Assert.assertTrue(testUtil.video.isEnabled());
+				    	
+				    	solo.clickOnButton(testUtil.video.getText().toString());
+						Thread.sleep(20000);
+						
+				    						    	
+				    	responseObject = mediaplayerfragment.testResponse;					    	
+				    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video));
+				    	Assert.assertTrue(testUtil.play.isEnabled());
+				    	AirPlayServiceTest.launchSession = MediaPlayerFragment.launchSession;
+				    	Assert.assertNotNull(launchSession);
+				    	Assert.assertTrue(testUtil.rewind.isEnabled());
+				    						    	
+						 if(null != testUtil.fastforward && actualDeviceAirPlayCapabilities.contains(TestConstants.FastForward)){
+						    	Assert.assertTrue(testUtil.fastforward.isEnabled());							    							    	
+						    	solo.clickOnButton(testUtil.fastforward.getText().toString());
+								Thread.sleep(10000);							    	
+						    	responseObject = mediaplayerfragment.testResponse;							    	
+						    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.FastForward_Media));									
+						    	Assert.assertTrue(testUtil.play.isEnabled());
+						    	Assert.assertNotNull(launchSession);
+						    	Assert.assertSame(launchSession ,MediaPlayerFragment.launchSession);
+						    	
+						    	//After pause click on play 
+						    	solo.clickOnButton(testUtil.play.getText().toString());
+								Thread.sleep(10000);
+								responseObject = mediaplayerfragment.testResponse;	
+								Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Played_Media));
+								Assert.assertNotNull(launchSession);
+						    	Assert.assertSame(launchSession ,MediaPlayerFragment.launchSession);
+								
+								}							 
+						}
+				
+				    } else{
+					i++;
+					continue;
+				}
+			} else {
+				break;
+			}			
+			
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);
+				
+				i = i+1;
+			}
+	}
+	
+	public void testAPSMediaControlAudioPlayFastForwardCapability() throws InterruptedException{
+		
+		int count  = 0;
+		int i = 1;			
+		
+		while(true){
+		
+			View actionconnect;
+			//Verify getPickerDialog is not null and returns an instance of DevicePicker
+			devicePkr = ((MainActivity)getActivity()).dp;
+			Assert.assertNotNull(devicePkr);				
+			
+			if(!alertDialog.isShowing()){
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);				
+				Thread.sleep(10000);
+			}
+			
+			Assert.assertTrue(alertDialog.isShowing());
+				
+			ListView view  = devicePkr.getListView();
+			
+			
+			if(testUtil.verifyWifiConnected(cmngr) && null != view){
+				
+				count=view.getCount();
+				Assert.assertTrue(count >= 0);
+			
+		    }
+			
+			if(i <= count){
+									
+				mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
+				if(!testUtil.deviceWithAirplayService.isEmpty() && testUtil.deviceWithAirplayService.contains(mTV)){	
+				
+					DeviceService deviceService = mTV.getServiceByName("AirPlay");										 	
+					solo.clickInList(i);
+					Thread.sleep(10000);						
+					Assert.assertTrue(mTV.isConnected());
+					Assert.assertTrue(deviceService.isConnected());						
+					
+					List<String> actualDeviceAirPlayCapabilities = deviceService.getCapabilities();
+					testUtil.getAssignedMediaButtons(((MainActivity)getActivity()).mSectionsPagerAdapter);
+					
+					
+					
+					//Verify pause when video is launched/play
+				    if(null != testUtil.audio && actualDeviceAirPlayCapabilities.contains(TestConstants.Play_Audio)){
+						
+				    	Assert.assertTrue(testUtil.audio.isEnabled());
+				    	
+				    	solo.clickOnButton(testUtil.audio.getText().toString());
+						Thread.sleep(20000);
+						
+				    						    	
+				    	responseObject = mediaplayerfragment.testResponse;					    	
+				    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio));
+				    	Assert.assertTrue(testUtil.play.isEnabled());
+				    	AirPlayServiceTest.launchSession = MediaPlayerFragment.launchSession;
+				    	Assert.assertNotNull(launchSession);
+				    	Assert.assertTrue(testUtil.fastforward.isEnabled());
+				    						    	
+						 if(null != testUtil.fastforward && actualDeviceAirPlayCapabilities.contains(TestConstants.FastForward)){
+						    	Assert.assertTrue(testUtil.fastforward.isEnabled());							    							    	
+						    	solo.clickOnButton(testUtil.fastforward.getText().toString());
+								Thread.sleep(10000);							    	
+						    	responseObject = mediaplayerfragment.testResponse;							    	
+						    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.FastForward_Media));									
+						    	Assert.assertTrue(testUtil.play.isEnabled());
+						    	Assert.assertNotNull(launchSession);
+						    	Assert.assertSame(launchSession ,MediaPlayerFragment.launchSession);
+						    	
+						    	//After pause click on play 
+						    	solo.clickOnButton(testUtil.play.getText().toString());
+								Thread.sleep(10000);
+								responseObject = mediaplayerfragment.testResponse;	
+								Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Played_Media));
+								Assert.assertNotNull(launchSession);
+						    	Assert.assertSame(launchSession ,MediaPlayerFragment.launchSession);
+								
+								}							 
+						}
+				
+				    } else{
+					i++;
+					continue;
+				}
+			} else {
+				break;
+			}			
+			
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);
+				
+				i = i+1;
+			}
+	}
+		
 
 }

@@ -5,9 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import junit.framework.Assert;
-import android.content.Context;
 import android.net.ConnectivityManager;
-import android.test.ActivityInstrumentationTestCase2;
 import android.widget.Button;
 
 import com.connectsdk.device.ConnectableDevice;
@@ -21,7 +19,7 @@ import com.connectsdk.service.RokuService;
 import com.connectsdk.service.WebOSTVService;
 import com.connectsdk.service.capability.MediaPlayer;
 
-public class TestUtil extends ActivityInstrumentationTestCase2<MainActivity> {
+public class TestUtil {// extends ActivityInstrumentationTestCase2<MainActivity> {
 	
 	List<ConnectableDevice> deviceWithWebOSTVService = new ArrayList<ConnectableDevice>();
 	List<ConnectableDevice> deviceWithDLNAService = new ArrayList<ConnectableDevice>();
@@ -32,9 +30,9 @@ public class TestUtil extends ActivityInstrumentationTestCase2<MainActivity> {
 	
 	List<ConnectableDevice> deviceWithImageDisplayCapability = new ArrayList<ConnectableDevice>();
 	
-	public final static String Display_Image = "MediaPlayer.Display.Image";
-	public final static String Display_Video = "MediaPlayer.Display.Video";
-	public final static String Display_Audio = "MediaPlayer.Display.Audio";
+	/*public final static String Display_Image = "MediaPlayer.Display.Image";
+	public final static String Display_Video = "MediaPlayer.Play.Video";
+	public final static String Display_Audio = "MediaPlayer.Play.Audio";
 	public final static String Close = "MediaPlayer.Close";
 	
 	public final static String MetaData_Title = "MediaPlayer.MetaData.Title";
@@ -84,7 +82,7 @@ public class TestUtil extends ActivityInstrumentationTestCase2<MainActivity> {
 	    PlayState,
 	    PlayState_Subscribe,
 	    Position,
-	};
+	};*/
 		
 	Button photo = null;
 	Button close = null;
@@ -99,9 +97,9 @@ public class TestUtil extends ActivityInstrumentationTestCase2<MainActivity> {
 	//private ConnectivityManager cmngr;
 	private SectionsPagerAdapter sectionAdapter;
 	
-	public TestUtil() {
+	/*public TestUtil() {
 		super("com.connectsdk.sampler", MainActivity.class);
-	}
+	}*/
 
 	
 	/**
@@ -113,11 +111,11 @@ public class TestUtil extends ActivityInstrumentationTestCase2<MainActivity> {
 	}
 	
 
-public boolean verifyWifiConnected(){
+public boolean verifyWifiConnected(ConnectivityManager cmngr ){
 		
 		boolean wifiConnected = false;
 		
-		ConnectivityManager cmngr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+		//ConnectivityManager cmngr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
 		if(cmngr.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI){
 			Assert.assertEquals(ConnectivityManager.TYPE_WIFI, cmngr.getActiveNetworkInfo().getType());
 			
@@ -179,17 +177,54 @@ public String[] getCapabilities(String CapabilityName){
 	String[] Capabilities = null;
 	
 	if(CapabilityName.equalsIgnoreCase("MediaPlayer")){
-		Capabilities = MediaPlayerCapabilities;
+		Capabilities = TestConstants.MediaPlayerCapabilities;
 	}
 	if(CapabilityName.equalsIgnoreCase("MediaControl")){
-		Capabilities = MediaControlCapabilities;
+		Capabilities = TestConstants.MediaControlCapabilities;
 	}
+	if(CapabilityName.equalsIgnoreCase("Launcher")){
+		Capabilities = TestConstants.LauncherCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("PlayListControl")){
+		Capabilities = TestConstants.PlayListControlCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("VolumeControl")){
+		Capabilities = TestConstants.VolumeControlCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("TVControl")){
+		Capabilities = TestConstants.TVControlCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("ExternalInputControl")){
+		Capabilities = TestConstants.ExtInputControlCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("MouseControl")){
+		Capabilities = TestConstants.MouseControlCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("TextInputControl")){
+		Capabilities = TestConstants.TextInputControlCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("PowerControl")){
+		Capabilities = TestConstants.PowerControlCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("KeyControl")){
+		Capabilities = TestConstants.KeyControlCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("ToastControl")){
+		Capabilities = TestConstants.ToastControlCapabilities;
+	}
+	if(CapabilityName.equalsIgnoreCase("WebAppLauncher")){
+		Capabilities = TestConstants.WebAppLauncherCapabilities;
+	}
+	
+	
+	
+	
 	return Capabilities;
 }
 
-public void getAssignedMediaButtons(){
+public void getAssignedMediaButtons(SectionsPagerAdapter sectionAdapter){
 	
-	sectionAdapter = ((MainActivity)getActivity()).mSectionsPagerAdapter;
+	
 	
 	MediaPlayerFragment mediaplayerfragment = (MediaPlayerFragment) sectionAdapter.getFragment(0);
 	Button[] mediaButtons = mediaplayerfragment.buttons;
@@ -217,10 +252,16 @@ public void getAssignedMediaButtons(){
 		if(button.getText().equals("Stop")){
 			this.stop = button;
 		}
+		if(button.getText().equals("Rewind")){
+			this.rewind = button;
+		}
+		if(button.getText().equals("Fast Forward")){
+			this.fastforward = button;
+		}
 		if(button.getText().equals("Close")){
 			this.close = button;
 		}
-		if(button.getText().equals("mediaInfo")){
+		if(button.getText().equals("Show Info")){
 			this.mediaInfo = button;
 		}
 	}
