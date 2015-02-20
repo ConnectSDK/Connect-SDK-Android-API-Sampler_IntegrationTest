@@ -4,7 +4,7 @@ The IntegrationTest for Connect-SDK-Android-API-Sampler App contains a set of au
 
 ##General Information
 For more information about Connect SDK, visit the [main repository](https://github.com/ConnectSDK/Connect-SDK-Android).
-For more information about Connect SDK Sampler App for Android, visit the [main repository](https://github.com/ConnectSDK/Connect-SDK-Android-API-Sampler).
+For more information about Connect SDK Sampler App for Android, visit the [Sampler main repository](https://github.com/ConnectSDK/Connect-SDK-Android-API-Sampler).
 
 ##Dependencies
 
