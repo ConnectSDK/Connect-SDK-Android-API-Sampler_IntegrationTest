@@ -18,9 +18,6 @@ import android.widget.TextView;
 import com.connectsdk.core.Util;
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.device.DevicePicker;
-import com.connectsdk.sampler.MainActivity;
-import com.connectsdk.sampler.R;
-import com.connectsdk.sampler.SectionsPagerAdapter;
 import com.connectsdk.sampler.fragments.MediaPlayerFragment;
 import com.connectsdk.sampler.fragments.WebAppFragment;
 import com.robotium.solo.Solo;
@@ -897,7 +894,7 @@ public class MainActivityTest extends
 			Assert.assertTrue(mTV.isConnected());
 			String expectedDeviceName = mTV.getFriendlyName();
 			
-			final ActionBar actionBar = ((MainActivity)getActivity()).getSupportedActionBar();	
+			final ActionBar actionBar = ((MainActivity)getActivity()).actionBar;	
 			int selectedNavigationIndex = actionBar.getSelectedNavigationIndex();
 			
 			while(selectedNavigationIndex < sectionAdapter.getCount()-1){
@@ -952,7 +949,7 @@ public class MainActivityTest extends
 			String zerothFragment = sectionAdapter.getTitle(0);
 			Assert.assertEquals("Media", zerothFragment);
 		
-		final ActionBar actionBar = ((MainActivity)getActivity()).getSupportedActionBar();
+		final ActionBar actionBar = ((MainActivity)getActivity()).actionBar;
 		
 		int selectedNavigationIndex = actionBar.getSelectedNavigationIndex();
 		final int itemToBeSelectedIndex = selectedNavigationIndex+1;	

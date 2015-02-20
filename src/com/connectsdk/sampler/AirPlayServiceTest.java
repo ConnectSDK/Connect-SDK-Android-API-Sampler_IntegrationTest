@@ -41,7 +41,7 @@ public class AirPlayServiceTest extends
 	
 	MediaPlayerFragment mediaplayerfragment;
 	TestResponseObject responseObject;
-	public static LaunchSession launchSession;
+	LaunchSession launchSession;
 	
 	
 	public AirPlayServiceTest() {
@@ -1045,7 +1045,7 @@ public void testAPSMediaControlVideoPlayRewindCapability() throws InterruptedExc
 			    	responseObject = mediaplayerfragment.testResponse;					    	
 			    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video));
 			    	Assert.assertTrue(testUtil.play.isEnabled());
-			    	AirPlayServiceTest.launchSession = MediaPlayerFragment.launchSession;
+			    	launchSession = MediaPlayerFragment.launchSession;
 			    	Assert.assertNotNull(launchSession);
 			    	Assert.assertTrue(testUtil.rewind.isEnabled());
 			    						    	
@@ -1145,7 +1145,7 @@ public void testAPSMediaControlVideoPlayRewindCapability() throws InterruptedExc
 				    	responseObject = mediaplayerfragment.testResponse;					    	
 				    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio));
 				    	Assert.assertTrue(testUtil.play.isEnabled());
-				    	AirPlayServiceTest.launchSession = MediaPlayerFragment.launchSession;
+				    	launchSession = MediaPlayerFragment.launchSession;
 				    	Assert.assertNotNull(launchSession);
 				    	Assert.assertTrue(testUtil.rewind.isEnabled());
 				    						    	
@@ -1245,7 +1245,7 @@ public void testAPSMediaControlVideoPlayRewindCapability() throws InterruptedExc
 				    	responseObject = mediaplayerfragment.testResponse;					    	
 				    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video));
 				    	Assert.assertTrue(testUtil.play.isEnabled());
-				    	AirPlayServiceTest.launchSession = MediaPlayerFragment.launchSession;
+				    	launchSession = MediaPlayerFragment.launchSession;
 				    	Assert.assertNotNull(launchSession);
 				    	Assert.assertTrue(testUtil.rewind.isEnabled());
 				    						    	
@@ -1345,7 +1345,7 @@ public void testAPSMediaControlVideoPlayRewindCapability() throws InterruptedExc
 				    	responseObject = mediaplayerfragment.testResponse;					    	
 				    	Assert.assertTrue(responseObject.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio));
 				    	Assert.assertTrue(testUtil.play.isEnabled());
-				    	AirPlayServiceTest.launchSession = MediaPlayerFragment.launchSession;
+				    	launchSession = MediaPlayerFragment.launchSession;
 				    	Assert.assertNotNull(launchSession);
 				    	Assert.assertTrue(testUtil.fastforward.isEnabled());
 				    						    	
