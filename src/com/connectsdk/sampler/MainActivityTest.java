@@ -18,9 +18,6 @@ import android.widget.TextView;
 import com.connectsdk.core.Util;
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.device.DevicePicker;
-import com.connectsdk.sampler.MainActivity;
-import com.connectsdk.sampler.R;
-import com.connectsdk.sampler.SectionsPagerAdapter;
 import com.connectsdk.sampler.fragments.MediaPlayerFragment;
 import com.connectsdk.sampler.fragments.WebAppFragment;
 import com.robotium.solo.Solo;
@@ -99,7 +96,6 @@ public class MainActivityTest extends
 		MediaPlayerFragment mediaplayerfragment = (MediaPlayerFragment) sectionAdapter.getFragment(0);
 		Button[] mediaButtons = mediaplayerfragment.buttons;
 		Assert.assertTrue(mediaButtons.length > 0);
-		Assert.assertTrue(mediaButtons.length == 10);
 		
 		for (Button button : mediaButtons) {
 			CharSequence label = button.getText();
@@ -198,13 +194,13 @@ public class MainActivityTest extends
 			    	Assert.assertTrue(photo.isEnabled());						
 			    }
 			    
-			    //Verify Video or MediaPlayer.Display.Video Capability
-			    if(null != video && capabilityList.contains("MediaPlayer.Display.Video")){
+			    //Verify Video or MediaPlayer.Play.Video Capability
+			    if(null != video && capabilityList.contains("MediaPlayer.Play.Video")){
 			    	Assert.assertTrue(video.isEnabled());
 			    }
 			    
-			    //Verify Audio or MediaPlayer.Display.Audio Capability
-			    if(null != audio && capabilityList.contains("MediaPlayer.Display.Audio")){
+			    //Verify Audio or MediaPlayer.Play.Audio Capability
+			    if(null != audio && capabilityList.contains("MediaPlayer.Play.Audio")){
 			    	Assert.assertTrue(audio.isEnabled());
 			    }
 			    
@@ -711,7 +707,7 @@ public class MainActivityTest extends
 					
 					List<String> actualDLNAcapabilities = service.getCapabilities();
 					Assert.assertFalse(actualDLNAcapabilities.isEmpty());
-					String[] DLNA = { "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe", "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Seek", "MediaControl.Position", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.PlayState.Subscribe", "VolumeControl.Set", "VolumeControl.Get", "VolumeControl.UpDown", "VolumeControl.Subscribe", "VolumeControl.Mute.Get", "VolumeControl.Mute.Set", "VolumeControl.Mute.Subscribe"};
+					String[] DLNA = { "MediaPlayer.Display.Image", "MediaPlayer.Play.Video", "MediaPlayer.Play.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe", "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Seek", "MediaControl.Position", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.PlayState.Subscribe", "VolumeControl.Set", "VolumeControl.Get", "VolumeControl.UpDown", "VolumeControl.Subscribe", "VolumeControl.Mute.Get", "VolumeControl.Mute.Set", "VolumeControl.Mute.Subscribe"};
 					List<String> expectedDLNACapabilities = Arrays.asList(DLNA);
 					
 					
@@ -722,11 +718,11 @@ public class MainActivityTest extends
 					
 					for (String string : actualDLNAcapabilities) {
 						
-					if(string.equalsIgnoreCase("MediaPlayer.Display.Image") || string.equalsIgnoreCase("MediaPlayer.Display.Video") || string.equalsIgnoreCase("MediaPlayer.Display.Audio") 
+					if(string.equalsIgnoreCase("MediaPlayer.Display.Image") || string.equalsIgnoreCase("MediaPlayer.Play.Video") || string.equalsIgnoreCase("MediaPlayer.Play.Audio") 
 							|| string.equalsIgnoreCase("MediaPlayer.Close") || string.equalsIgnoreCase("MediaPlayer.MetaData.Title") || string.equalsIgnoreCase("MediaPlayer.MetaData.MimeType")
 							|| string.equalsIgnoreCase("MediaPlayer.MediaInfo.Get") || string.equalsIgnoreCase("MediaPlayer.MediaInfo.Subscribe")){
 						
-						String[] MediaPlayerCapabilities = { "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe"};
+						String[] MediaPlayerCapabilities = { "MediaPlayer.Display.Image", "MediaPlayer.Play.Video", "MediaPlayer.Play.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe"};
 						List<String> expectedMediaPlayerCapabilities = Arrays.asList(MediaPlayerCapabilities);
 						hasDLNACapabilities = Boolean.TRUE;	
 						
@@ -767,7 +763,7 @@ public class MainActivityTest extends
 					List<String> actualWebOSTVcapabilities = service.getCapabilities();
 					Assert.assertFalse(actualWebOSTVcapabilities.isEmpty());					
 					
-					String[] WebOSTV = { "TextInputControl.Send", "TextInputControl.Enter", "TextInputControl.Delete", "TextInputControl.Subscribe", "MouseControl.Connect", "MouseControl.Disconnect", "MouseControl.Click", "MouseControl.Move", "MouseControl.Scroll", "KeyControl.Up", "KeyControl.Down", "KeyControl.Left", "KeyControl.Right", "KeyControl.OK", "KeyControl.Back", "KeyControl.Home", "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.Description", "MediaPlayer.MetaData.Thumbnail", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe", "Launcher.App", "Launcher.App.Params", "Launcher.App.Close", "Launcher.App.List", "Launcher.Browser", "Launcher.Browser.Params", "Launcher.Hulu", "Launcher.Hulu.Params", "Launcher.Netflix", "Launcher.Netflix.Params", "Launcher.YouTube", "Launcher.YouTube.Params", "Launcher.AppStore", "Launcher.AppStore.Params", "Launcher.AppState", "Launcher.AppState.Subscribe", "Launcher.RunningApp", "Launcher.RunningApp.Subscribe", "TVControl.Channel.Get", "TVControl.Channel.Set", "TVControl.Channel.Up", "TVControl.Channel.Down", "TVControl.Channel.List", "TVControl.Channel.Subscribe", "TVControl.Program.Get", "TVControl.Program.List", "TVControl.Program.Subscribe", "TVControl.Program.List.Subscribe", "TVControl.3D.Get", "TVControl.3D.Set", "TVControl.3D.Subscribe", "ExternalInputControl.Picker.Launch", "ExternalInputControl.Picker.Close", "ExternalInputControl.List", "ExternalInputControl.Set", "VolumeControl.Get", "VolumeControl.Set", "VolumeControl.UpDown", "VolumeControl.Subscribe", "VolumeControl.Mute.Get", "VolumeControl.Mute.Set", "VolumeControl.Mute.Subscribe", "ToastControl.Show", "ToastControl.Show.Clickable.App", "ToastControl.Show.Clickable.App.Params", "ToastControl.Show.Clickable.URL", "PowerControl.Off", "WebAppLauncher.Launch", "WebAppLauncher.Launch.Params", "WebAppLauncher.Message.Send", "WebAppLauncher.Message.Receive", "WebAppLauncher.Message.Send.JSON", "WebAppLauncher.Message.Receive.JSON", "WebAppLauncher.Connect", "WebAppLauncher.Disconnect", "WebAppLauncher.Join", "WebAppLauncher.Close", "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Rewind", "MediaControl.FastForward", "MediaControl.Seek", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.PlayState.Subscribe", "MediaControl.Position"};
+					String[] WebOSTV = { "TextInputControl.Send", "TextInputControl.Enter", "TextInputControl.Delete", "TextInputControl.Subscribe", "MouseControl.Connect", "MouseControl.Disconnect", "MouseControl.Click", "MouseControl.Move", "MouseControl.Scroll", "KeyControl.Up", "KeyControl.Down", "KeyControl.Left", "KeyControl.Right", "KeyControl.OK", "KeyControl.Back", "KeyControl.Home", "MediaPlayer.Display.Image", "MediaPlayer.Play.Video", "MediaPlayer.Play.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.Description", "MediaPlayer.MetaData.Thumbnail", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe", "Launcher.App", "Launcher.App.Params", "Launcher.App.Close", "Launcher.App.List", "Launcher.Browser", "Launcher.Browser.Params", "Launcher.Hulu", "Launcher.Hulu.Params", "Launcher.Netflix", "Launcher.Netflix.Params", "Launcher.YouTube", "Launcher.YouTube.Params", "Launcher.AppStore", "Launcher.AppStore.Params", "Launcher.AppState", "Launcher.AppState.Subscribe", "Launcher.RunningApp", "Launcher.RunningApp.Subscribe", "TVControl.Channel.Get", "TVControl.Channel.Set", "TVControl.Channel.Up", "TVControl.Channel.Down", "TVControl.Channel.List", "TVControl.Channel.Subscribe", "TVControl.Program.Get", "TVControl.Program.List", "TVControl.Program.Subscribe", "TVControl.Program.List.Subscribe", "TVControl.3D.Get", "TVControl.3D.Set", "TVControl.3D.Subscribe", "ExternalInputControl.Picker.Launch", "ExternalInputControl.Picker.Close", "ExternalInputControl.List", "ExternalInputControl.Set", "VolumeControl.Get", "VolumeControl.Set", "VolumeControl.UpDown", "VolumeControl.Subscribe", "VolumeControl.Mute.Get", "VolumeControl.Mute.Set", "VolumeControl.Mute.Subscribe", "ToastControl.Show", "ToastControl.Show.Clickable.App", "ToastControl.Show.Clickable.App.Params", "ToastControl.Show.Clickable.URL", "PowerControl.Off", "WebAppLauncher.Launch", "WebAppLauncher.Launch.Params", "WebAppLauncher.Message.Send", "WebAppLauncher.Message.Receive", "WebAppLauncher.Message.Send.JSON", "WebAppLauncher.Message.Receive.JSON", "WebAppLauncher.Connect", "WebAppLauncher.Disconnect", "WebAppLauncher.Join", "WebAppLauncher.Close", "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Rewind", "MediaControl.FastForward", "MediaControl.Seek", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.PlayState.Subscribe", "MediaControl.Position"};
 					List<String> expectedWebOSTVCapabilities = Arrays.asList(WebOSTV);
 					
 					
@@ -781,7 +777,7 @@ public class MainActivityTest extends
 					List<String> actualAirPlaycapabilities = service.getCapabilities();
 					Assert.assertFalse(actualAirPlaycapabilities.isEmpty());
 					
-					String[] AirPlay = { "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.Description", "MediaPlayer.MetaData.Thumbnail", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe", "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Position", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.Seek", "MediaControl.Rewind", "MediaControl.FastForward"};
+					String[] AirPlay = { "MediaPlayer.Display.Image", "MediaPlayer.Play.Video", "MediaPlayer.Play.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.Description", "MediaPlayer.MetaData.Thumbnail", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe", "MediaControl.Play", "MediaControl.Pause", "MediaControl.Stop", "MediaControl.Position", "MediaControl.Duration", "MediaControl.PlayState", "MediaControl.Seek", "MediaControl.Rewind", "MediaControl.FastForward"};
 					List<String> expectedAirPlaycapabilities = Arrays.asList(AirPlay);
 					
 					Assert.assertTrue(actualAirPlaycapabilities.containsAll(expectedAirPlaycapabilities));
@@ -790,12 +786,12 @@ public class MainActivityTest extends
 					
 					for (String string : actualAirPlaycapabilities) {
 						
-					if(string.equalsIgnoreCase("MediaPlayer.Display.Image") || string.equalsIgnoreCase("MediaPlayer.Display.Video") || string.equalsIgnoreCase("MediaPlayer.Display.Audio") 
+					if(string.equalsIgnoreCase("MediaPlayer.Display.Image") || string.equalsIgnoreCase("MediaPlayer.Play.Video") || string.equalsIgnoreCase("MediaPlayer.Play.Audio") 
 							|| string.equalsIgnoreCase("MediaPlayer.Close") || string.equalsIgnoreCase("MediaPlayer.MetaData.Title") || string.equalsIgnoreCase("MediaPlayer.MetaData.Description")
 							|| string.equalsIgnoreCase("MediaPlayer.MetaData.Thumbnail") || string.equalsIgnoreCase("MediaPlayer.MetaData.MimeType") || string.equalsIgnoreCase("MediaPlayer.MediaInfo.Get") 
 							|| string.equalsIgnoreCase("MediaPlayer.MediaInfo.Subscribe")){
 						
-						String[] MediaPlayerCapabilities = { "MediaPlayer.Display.Image", "MediaPlayer.Display.Video", "MediaPlayer.Display.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.Description", "MediaPlayer.MetaData.Thumbnail", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe"};
+						String[] MediaPlayerCapabilities = { "MediaPlayer.Display.Image", "MediaPlayer.Play.Video", "MediaPlayer.Play.Audio", "MediaPlayer.Close", "MediaPlayer.MetaData.Title", "MediaPlayer.MetaData.Description", "MediaPlayer.MetaData.Thumbnail", "MediaPlayer.MetaData.MimeType", "MediaPlayer.MediaInfo.Get", "MediaPlayer.MediaInfo.Subscribe"};
 						List<String> expectedMediaPlayerCapabilities = Arrays.asList(MediaPlayerCapabilities);
 						hasAirPlayCapabilities = Boolean.TRUE;	
 						
@@ -898,7 +894,7 @@ public class MainActivityTest extends
 			Assert.assertTrue(mTV.isConnected());
 			String expectedDeviceName = mTV.getFriendlyName();
 			
-			final ActionBar actionBar = ((MainActivity)getActivity()).getSupportedActionBar();	
+			final ActionBar actionBar = ((MainActivity)getActivity()).actionBar;	
 			int selectedNavigationIndex = actionBar.getSelectedNavigationIndex();
 			
 			while(selectedNavigationIndex < sectionAdapter.getCount()-1){
@@ -953,7 +949,7 @@ public class MainActivityTest extends
 			String zerothFragment = sectionAdapter.getTitle(0);
 			Assert.assertEquals("Media", zerothFragment);
 		
-		final ActionBar actionBar = ((MainActivity)getActivity()).getSupportedActionBar();
+		final ActionBar actionBar = ((MainActivity)getActivity()).actionBar;
 		
 		int selectedNavigationIndex = actionBar.getSelectedNavigationIndex();
 		final int itemToBeSelectedIndex = selectedNavigationIndex+1;	

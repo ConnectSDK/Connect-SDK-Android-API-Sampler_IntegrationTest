@@ -147,13 +147,13 @@ public class MediaPlayerFragmentTest extends
 				    	Assert.assertTrue(photo.isEnabled());						
 				    }
 				    
-				    //Verify Video or MediaPlayer.Display.Video Capability
-				    if(null != video && capabilityList.contains("MediaPlayer.Display.Video")){
+				    //Verify Video or MediaPlayer.Play.Video Capability
+				    if(null != video && capabilityList.contains("MediaPlayer.Play.Video")){
 				    	Assert.assertTrue(video.isEnabled());
 				    }
 				    
-				    //Verify Audio or MediaPlayer.Display.Audio Capability
-				    if(null != audio && capabilityList.contains("MediaPlayer.Display.Audio")){
+				    //Verify Audio or MediaPlayer.Play.Audio Capability
+				    if(null != audio && capabilityList.contains("MediaPlayer.Play.Audio")){
 				    	Assert.assertTrue(audio.isEnabled());
 				    }
 				    
@@ -422,13 +422,13 @@ public void testDisplayImageWithDeviceConnected() throws InterruptedException{
 		    	Assert.assertTrue(photo.isEnabled());						
 		    }
 		    
-		    //Verify Video or MediaPlayer.Display.Video Capability
-		    if(null != video && capabilityList.contains("MediaPlayer.Display.Video")){
+		    //Verify Video or MediaPlayer.Play.Video Capability
+		    if(null != video && capabilityList.contains("MediaPlayer.Play.Video")){
 		    	Assert.assertTrue(video.isEnabled());
 		    }
 		    
-		    //Verify Audio or MediaPlayer.Display.Audio Capability
-		    if(null != audio && capabilityList.contains("MediaPlayer.Display.Audio")){
+		    //Verify Audio or MediaPlayer.Play.Audio Capability
+		    if(null != audio && capabilityList.contains("MediaPlayer.Play.Audio")){
 		    	Assert.assertTrue(audio.isEnabled());
 		    }
 		    
