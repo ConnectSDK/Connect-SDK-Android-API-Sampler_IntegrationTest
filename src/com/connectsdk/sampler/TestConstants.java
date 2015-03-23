@@ -15,6 +15,12 @@ public class TestConstants {
 	
 	public final static String MediaInfo_Get = "MediaPlayer.MediaInfo.Get";
 	public final static String MediaInfo_Subscribe = "MediaPlayer.MediaInfo.Subscribe";
+	public final static String Play_Playlist = "MediaPlayer.Play.Playlist";
+	
+	public final static int WAIT_COUNT = 100;
+	public final static int WAIT_TIME_IN_MILLISECONDS = 1000;
+
+	
 	
 	
 	public final static String[] MediaPlayerCapabilities = {
@@ -249,6 +255,8 @@ public class TestConstants {
 	    public final static String Join = "WebAppLauncher.Join";
 	    public final static String WebApp_Close = "WebAppLauncher.Close";
 	    public final static String Pin = "WebAppLauncher.Pin";
+	    public final static String UnPin = "WebAppLauncher.UpPin";
+	    
 
 	    public final static String[] WebAppLauncherCapabilities = {
 	        Launch,
@@ -261,7 +269,8 @@ public class TestConstants {
 	        WebApp_Disconnect,
 	        Join,
 	        WebApp_Close,
-	        Pin
+	        Pin,
+	        UnPin
 	    };
 
 

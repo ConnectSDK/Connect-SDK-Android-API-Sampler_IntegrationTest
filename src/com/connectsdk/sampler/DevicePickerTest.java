@@ -5,20 +5,20 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.test.ActivityInstrumentationTestCase2;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.device.DevicePicker;
-import com.connectsdk.sampler.MainActivity;
-import com.connectsdk.sampler.R;
+import com.connectsdk.sampler.TestUtil.Condition;
 import com.robotium.solo.Solo;
 
 public class DevicePickerTest extends
 		ActivityInstrumentationTestCase2<MainActivity> {
 	
-	Button photo = null;
+	/*Button photo = null;
 	Button close = null;
 	Button video = null;
 	Button audio = null;
@@ -27,7 +27,7 @@ public class DevicePickerTest extends
 	Button stop = null;
 	Button rewind = null;
 	Button fastforward = null;
-	Button mediaInfo = null;
+	Button mediaInfo = null;*/
 	
 
 	private Solo solo;
@@ -35,6 +35,7 @@ public class DevicePickerTest extends
 	private ConnectableDevice mTV;
 	private  DevicePicker devicePkr;
 	private ConnectivityManager cmngr;
+	private TestUtil testUtil;
 	
 	public DevicePickerTest() {
 		super("com.connectsdk.sampler", MainActivity.class);
@@ -47,10 +48,11 @@ public class DevicePickerTest extends
 		mTV = ((MainActivity)getActivity()).mTV;
 		devicePkr = ((MainActivity)getActivity()).dp; 
 		cmngr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+		testUtil = new TestUtil();
 	}
 
 	
-	// /////////////////////////////////////////////////////////// // //	
+			// /////////////////////////////////////////////////////////// // //	
 			// ********************* Test for DevicePicker API ************** //
 			// /////////////////////////////////////////////////////////// // //
 			
@@ -87,14 +89,15 @@ public class DevicePickerTest extends
 				
 			}
 			
-			/*public void testAlternatePickDevice() throws InterruptedException{
+							
+			public void testConnectivityToDevices() throws InterruptedException{
 				View actionconnect;
 				ListView view;
 				int count  = 0;
 				int i = 1;
 				
 				while(true){
-				
+					
 					//Verify getPickerDialog is not null and returns an instance of DevicePicker
 					devicePkr = ((MainActivity)getActivity()).dp;
 					Assert.assertNotNull(devicePkr);
@@ -103,92 +106,39 @@ public class DevicePickerTest extends
 						
 						actionconnect = solo.getView(R.id.action_connect);
 						solo.clickOnView(actionconnect);				
-						Thread.sleep(10000);
-						
+						//Thread.sleep(10000);
 					}
 					
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !alertDialog.isShowing();
+						}
+					}, "!alertDialog.isShowing()" );
 					Assert.assertTrue(alertDialog.isShowing());
 						
 					view = devicePkr.getListView();
-					Thread.sleep(1000);
+					//Thread.sleep(1000);
 					
-					//Verify only if connected with Wifi then list can be 0 or greater.
-					if(cmngr.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI){
-						Assert.assertEquals(ConnectivityManager.TYPE_WIFI, cmngr.getActiveNetworkInfo().getType());
-						//When not connected WiFi
-						if(cmngr.getActiveNetworkInfo().isConnected()){
-							Assert.assertTrue(cmngr.getActiveNetworkInfo().isConnected());
-							if(null != view){
-								count=view.getCount();
-								Assert.assertTrue(count >= 0);
-							}
-						}
-					}		
-					
-					if(i <= count){
-						solo.clickInList(i);
-						} else {
+					int waitCount = 0;
+					while(view.getCount() == 0){					
+						if(waitCount > TestConstants.WAIT_COUNT){
 							break;
+						} else {
+						Thread.sleep(TestConstants.WAIT_TIME_IN_MILLISECONDS);
+						waitCount++;
 						}
-					
-					Thread.sleep(5000);
-					
-			
-					mTV = ((MainActivity)getActivity()).mTV;
-					Assert.assertTrue(mTV.isConnected());
-										
-						Assert.assertFalse(mTV.getCapabilities().isEmpty());
-						
-						Thread.sleep(2000);
-						
-						actionconnect = solo.getView(R.id.action_connect);
-						solo.clickOnView(actionconnect);
-						
-						Thread.sleep(5000);
-						
-						Assert.assertFalse(mTV.isConnected());
-						i = i+2;
-					}
-			}*/
-			
-					
-			public void testConnectToDevices() throws InterruptedException{
-				View actionconnect;
-				ListView view;
-				int count  = 0;
-				int i = 1;
-				
-				while(true){
-					
-					//Verify getPickerDialog is not null and returns an instance of DevicePicker
-					devicePkr = ((MainActivity)getActivity()).dp;
-					Assert.assertNotNull(devicePkr);
-					
-					if(!alertDialog.isShowing()){
-						
-						actionconnect = solo.getView(R.id.action_connect);
-						solo.clickOnView(actionconnect);				
-						Thread.sleep(10000);
-						
-					}
-					
-					Assert.assertTrue(alertDialog.isShowing());
-						
-					view = devicePkr.getListView();
-					Thread.sleep(1000);
+						Log.d("", "Waiting till count == 0 -----------------------------------"+waitCount);
+						}
 					
 					//Verify only if connected with Wifi then list can be 0 or greater.
-					if(cmngr.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI){
-						Assert.assertEquals(ConnectivityManager.TYPE_WIFI, cmngr.getActiveNetworkInfo().getType());
-						//When not connected WiFi
-						if(cmngr.getActiveNetworkInfo().isConnected()){
-							Assert.assertTrue(cmngr.getActiveNetworkInfo().isConnected());
-							if(null != view){
-								count=view.getCount();
-								Assert.assertTrue(count >= 0);
-							}
-						}
-					}		
+					if(testUtil.verifyWifiConnected(cmngr) && null != view){
+						
+						count=view.getCount();
+						Assert.assertTrue(count >= 0);
+					
+				    }		
 					
 					if(i <= count){
 					solo.clickInList(i);
@@ -196,18 +146,37 @@ public class DevicePickerTest extends
 						break;
 					}
 					
-					Thread.sleep(2000);
+					//Thread.sleep(2000);
+					//mTV = ((MainActivity)getActivity()).mTV;
+					mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
 					
-					mTV = ((MainActivity)getActivity()).mTV;
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mTV.isConnected();
+						}
+					}, "!mTV.isConnected()");
+
+					
+					
 					Assert.assertTrue(mTV.isConnected());
 					Assert.assertFalse(mTV.getCapabilities().isEmpty());
 					
-					Thread.sleep(2000);
+					//Thread.sleep(2000);
 					
 					actionconnect = solo.getView(R.id.action_connect);
 					solo.clickOnView(actionconnect);
 					
-					Thread.sleep(10000);
+					//Thread.sleep(10000);
+					
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return mTV.isConnected();
+						}
+					}, "mTV.isConnected()");
 					
 					Assert.assertFalse(mTV.isConnected());
 			        i++;
@@ -244,15 +213,27 @@ public class DevicePickerTest extends
 			
 			public void testDevicePickerItemsWithoutWifi() throws InterruptedException{
 				
+				View actionconnect;
+				
 				//When not connected WiFi
 				alertDialog = ((MainActivity)getActivity()).dialog;
 				
-				//assert that on click of connect button a list of device is shown.			
-				View actionconnect = solo.getView(R.id.action_connect);
-				solo.clickOnView(actionconnect);
+				if(!alertDialog.isShowing()){
+					
+					actionconnect = solo.getView(R.id.action_connect);
+					solo.clickOnView(actionconnect);				
+					//Thread.sleep(10000);
+				}
 				
-				Thread.sleep(10000);
+				testUtil.waitForCondition(new Condition() {
+					
+					@Override
+					public boolean compare() {
+						return !alertDialog.isShowing();
+					}
+				}, "!alertDialog.isShowing()" );
 				Assert.assertTrue(alertDialog.isShowing());
+				
 				solo.assertCurrentActivity("Device List Dialog not displayed as part of mainActivity", MainActivity.class);
 					
 				devicePkr = ((MainActivity)getActivity()).dp;

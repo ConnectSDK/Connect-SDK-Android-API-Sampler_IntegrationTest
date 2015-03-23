@@ -2,7 +2,6 @@ package com.connectsdk.sampler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -10,19 +9,15 @@ import junit.framework.Assert;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.net.ConnectivityManager;
-import android.support.v4.view.ViewPager;
 import android.test.ActivityInstrumentationTestCase2;
-import android.view.MenuItem;
+import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ListView;
 
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.device.DevicePicker;
 import com.connectsdk.discovery.DiscoveryManager;
-import com.connectsdk.sampler.MainActivity;
-import com.connectsdk.sampler.R;
-import com.connectsdk.sampler.SectionsPagerAdapter;
+import com.connectsdk.sampler.TestUtil.Condition;
 import com.connectsdk.sampler.fragments.MediaPlayerFragment;
 import com.connectsdk.service.AirPlayService;
 import com.connectsdk.service.DIALService;
@@ -37,27 +32,29 @@ public class ConnectableDeviceTest extends
 		ActivityInstrumentationTestCase2<MainActivity> {
 	
 
-	TestUtil testUtil;
+	private TestUtil testUtil;
 	private Solo solo;
 	private SectionsPagerAdapter sectionAdapter;
 	private AlertDialog alertDialog;
 	private ConnectableDevice mTV;
 	private  DevicePicker devicePkr;
 	private ConnectivityManager cmngr;
-	List<String> expectedLauncherCapabilities = new ArrayList<String>();
-	List<String> expectedMediaPlayerCapabilities = new ArrayList<String>();
-	List<String> expectedMediaControlCapabilities = new ArrayList<String>();
-	List<String> expectedPlayListControlCapabilities = new ArrayList<String>();
-	List<String> expectedVolumeControlCapabilities = new ArrayList<String>();
+	private int totalConnectableDevices;
+	private List<String> expectedLauncherCapabilities = new ArrayList<String>();
+	private List<String> expectedMediaPlayerCapabilities = new ArrayList<String>();
+	private List<String> expectedMediaControlCapabilities = new ArrayList<String>();
+	private List<String> expectedPlayListControlCapabilities = new ArrayList<String>();
+	private List<String> expectedVolumeControlCapabilities = new ArrayList<String>();
 	
-	List<String> expectedTVControlCapabilities = new ArrayList<String>();
-	List<String> expectedExternalInputControlCapabilities = new ArrayList<String>();
-	List<String> expectedMouseControlCapabilities = new ArrayList<String>();
-	List<String> expectedTextInputControlCapabilities = new ArrayList<String>();
-	List<String> expectedPowerControlCapabilities = new ArrayList<String>();
-	List<String> expectedKeyControlCapabilities = new ArrayList<String>();
-	List<String> expectedToastControlCapabilities = new ArrayList<String>();
-	List<String> expectedWebAppLauncherCapabilities = new ArrayList<String>();
+	private List<String> expectedTVControlCapabilities = new ArrayList<String>();
+	private List<String> expectedExternalInputControlCapabilities = new ArrayList<String>();
+	private List<String> expectedMouseControlCapabilities = new ArrayList<String>();
+	private List<String> expectedTextInputControlCapabilities = new ArrayList<String>();
+	private List<String> expectedPowerControlCapabilities = new ArrayList<String>();
+	private List<String> expectedKeyControlCapabilities = new ArrayList<String>();
+	private List<String> expectedToastControlCapabilities = new ArrayList<String>();
+	private List<String> expectedWebAppLauncherCapabilities = new ArrayList<String>();
+	private View actionconnect;
 	
 	
 	
@@ -74,9 +71,14 @@ public class ConnectableDeviceTest extends
 		devicePkr = ((MainActivity)getActivity()).dp; 
 		cmngr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
 		testUtil = new TestUtil();
-		Collection<ConnectableDevice> devices=DiscoveryManager.getInstance().getCompatibleDevices().values();
-		Thread.sleep(10000);
-		testUtil.getDeviceWithServices(devices);
+		testUtil.waitForCondition(new Condition() {
+			
+			@Override
+			public boolean compare() {
+				return DiscoveryManager.getInstance().getCompatibleDevices().values().isEmpty();
+			}
+		}, "devices.isEmpty()" );
+		testUtil.getDeviceWithServices(DiscoveryManager.getInstance().getCompatibleDevices().values());
 		expectedLauncherCapabilities = Arrays.asList(testUtil.getCapabilities("Launcher"));
 		expectedMediaPlayerCapabilities = Arrays.asList(testUtil.getCapabilities("MediaPlayer"));
 		expectedMediaControlCapabilities = Arrays.asList(testUtil.getCapabilities("MediaControl"));
@@ -93,42 +95,85 @@ public class ConnectableDeviceTest extends
 				
 	}
 	
-	public void testConnectedDeviceSupportedServices() throws InterruptedException{
-		View actionconnect;
-		ListView view;
-				
-		int count  = 0;
-		int i = 1;
+public ListView getViewCount(){
 		
-		while(true){	
+		int count  = 0;				
+		View actionconnect;
 			//Verify getPickerDialog is not null and returns an instance of DevicePicker
 			devicePkr = ((MainActivity)getActivity()).dp;
-			Assert.assertNotNull(devicePkr);
 			
 			if(!alertDialog.isShowing()){
 				
 				actionconnect = solo.getView(R.id.action_connect);
 				solo.clickOnView(actionconnect);				
-				Thread.sleep(10000);
-				
 			}
+			
+			testUtil.waitForCondition(new Condition() {
+					
+					@Override
+					public boolean compare() {
+						return !alertDialog.isShowing();
+					}
+				}, "!alertDialog.isShowing()" );
 			Assert.assertTrue(alertDialog.isShowing());
 				
-			view = devicePkr.getListView();			
+			ListView view  = devicePkr.getListView();
+			totalConnectableDevices = DiscoveryManager.getInstance().getCompatibleDevices().values().size();
 			
-			if(i <= count){
-				solo.clickInList(i);
+			int waitCount = 0;			
+			while(view.getCount() < totalConnectableDevices){					
+					if(waitCount > TestConstants.WAIT_COUNT){
+						break;
+					} else {
+					try {
+						Thread.sleep(TestConstants.WAIT_TIME_IN_MILLISECONDS);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					waitCount++;
+					}
+					Log.d("", "Waiting till count == 0 -----------------------------------"+waitCount);
+					}
+			
+				if(testUtil.verifyWifiConnected(cmngr) && null != view){
+					
+					count=view.getCount();
+					Assert.assertTrue(count >= 0);
+				
+			    }
+				return view;
+		
+	
+	}
+	
+	public void testConnectedDeviceSupportedServices() throws InterruptedException{
+		
+		int i = 1;
+		
+		while(true){	
+			ListView view = getViewCount();
+			  
+			if(i <= view.getCount()){
+			
+			    solo.clickInList(i);
 				} else {
 					break;
 				}			
 			
-			Thread.sleep(2000);
+			mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
 			
-			mTV = ((MainActivity)getActivity()).mTV;
+			testUtil.waitForCondition(new Condition() {
+				
+				@Override
+				public boolean compare() {
+					return !mTV.isConnected();
+				}
+			}, "!mTV.isConnected()" );
+						
+			
 			Assert.assertTrue(mTV.isConnected());
 			
 			Assert.assertFalse(mTV.getCapabilities().isEmpty());			
-			Thread.sleep(2000);			
 			Assert.assertNotNull(mTV.getConnectedServiceNames());			
 						
 			sectionAdapter = ((MainActivity)getActivity()).mSectionsPagerAdapter;
@@ -175,7 +220,13 @@ public class ConnectableDeviceTest extends
 			actionconnect = solo.getView(R.id.action_connect);
 			solo.clickOnView(actionconnect);
 			
-			Thread.sleep(10000);
+			testUtil.waitForCondition(new Condition() {
+				
+				@Override
+				public boolean compare() {
+					return mTV.isConnected();
+				}
+			}, "mTV.isConnected()" );
 			
 			Assert.assertFalse(mTV.isConnected());
 	        i++;
@@ -186,34 +237,14 @@ public class ConnectableDeviceTest extends
 	   	}
 	
 	public void testSupportedCapabilityForDeviceConnected() throws InterruptedException {
-		View actionconnect;
-		ListView view;				
-			
-		int count  = 0;
+		
 		int i = 1;
 		
 		while(true){			
 		
-			//Verify getPickerDialog is not null and returns an instance of DevicePicker
-			devicePkr = ((MainActivity)getActivity()).dp;
+			ListView view = getViewCount();
+				
 			
-			if(!alertDialog.isShowing()){
-				
-				actionconnect = solo.getView(R.id.action_connect);
-				solo.clickOnView(actionconnect);				
-				Thread.sleep(10000);
-				
-			}
-			Assert.assertTrue(alertDialog.isShowing());
-				
-			view = devicePkr.getListView();			
-			
-			if(testUtil.verifyWifiConnected(cmngr) && null != view){
-				
-				count=view.getCount();
-				Assert.assertTrue(count >= 0);
-			
-		    }
 			ArrayList<DeviceService> foundServices = new ArrayList<DeviceService>();
 			Boolean hasDIALCapabilities = Boolean.FALSE;
 			Boolean hasAirPlayCapabilities = Boolean.FALSE;
@@ -223,15 +254,21 @@ public class ConnectableDeviceTest extends
 			Boolean hasRokuCapabilities = Boolean.FALSE;		
 					
 			
-			if(i <= count){
+			if(i <= view.getCount()){
+				
 				solo.clickInList(i);
-				Thread.sleep(10000);
+				mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
 				
-				mTV = ((MainActivity)getActivity()).mTV;
-				Assert.assertTrue(mTV.isConnected());			
+				testUtil.waitForCondition(new Condition() {
+					
+					@Override
+					public boolean compare() {
+						return !mTV.isConnected();
+					}
+				}, "!mTV.isConnected()" );
+				
+				Assert.assertTrue(mTV.isConnected());
 				Assert.assertFalse(mTV.getCapabilities().isEmpty());
-				
-				Thread.sleep(2000);						
 				
 				Assert.assertNotNull(mTV.getServices());
 				
@@ -538,7 +575,14 @@ public class ConnectableDeviceTest extends
 			actionconnect = solo.getView(R.id.action_connect);
 			solo.clickOnView(actionconnect);
 			
-			Thread.sleep(10000);
+						
+        testUtil.waitForCondition(new Condition() {
+				
+				@Override
+				public boolean compare() {
+					return mTV.isConnected();
+				}
+			}, "mTV.isConnected()" );
 			
 			Assert.assertFalse(mTV.isConnected());
 	        i++;

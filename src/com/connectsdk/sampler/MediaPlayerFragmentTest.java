@@ -8,34 +8,22 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.support.v4.view.ViewPager;
 import android.test.ActivityInstrumentationTestCase2;
-import android.view.MenuItem;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 
 import com.connectsdk.device.ConnectableDevice;
 import com.connectsdk.device.DevicePicker;
-import com.connectsdk.sampler.MainActivity;
-import com.connectsdk.sampler.R;
-import com.connectsdk.sampler.SectionsPagerAdapter;
+import com.connectsdk.discovery.DiscoveryManager;
+import com.connectsdk.sampler.TestUtil.Condition;
 import com.connectsdk.sampler.fragments.MediaPlayerFragment;
+import com.connectsdk.sampler.util.TestResponseObject;
 import com.robotium.solo.Solo;
 
 public class MediaPlayerFragmentTest extends
 		ActivityInstrumentationTestCase2<MainActivity> {
 	
-	Button photo = null;
-	Button close = null;
-	Button video = null;
-	Button audio = null;
-	Button play = null;
-	Button pause = null;
-	Button stop = null;
-	Button rewind = null;
-	Button fastforward = null;
-	Button mediaInfo = null;
-	
-
 	private Solo solo;
 	private ViewPager viewPager;
 	private SectionsPagerAdapter sectionAdapter;
@@ -43,7 +31,10 @@ public class MediaPlayerFragmentTest extends
 	private ConnectableDevice mTV;
 	private  DevicePicker devicePkr;
 	private ConnectivityManager cmngr;
-	private MenuItem connectItem;	
+	TestUtil testUtil;
+	MediaPlayerFragment mediaplayerfragment;
+	private View actionconnect;
+	private int totalConnectableDevices;
 	
 	public MediaPlayerFragmentTest() {
 		super("com.connectsdk.sampler", MainActivity.class);
@@ -57,11 +48,62 @@ public class MediaPlayerFragmentTest extends
 		alertDialog = ((MainActivity)getActivity()).dialog;
 		mTV = ((MainActivity)getActivity()).mTV;
 		devicePkr = ((MainActivity)getActivity()).dp; 
-		connectItem = ((MainActivity)getActivity()).connectItem;
+		testUtil = new TestUtil();
 		cmngr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+		mediaplayerfragment = (MediaPlayerFragment) sectionAdapter.getFragment(0);
 	}
 
-/*	public void testMediaPlayerWithNoDeviceConnected(){
+public ListView getViewCount(){
+		
+		int count  = 0;				
+		View actionconnect;
+			//Verify getPickerDialog is not null and returns an instance of DevicePicker
+			devicePkr = ((MainActivity)getActivity()).dp;
+			
+			if(!alertDialog.isShowing()){
+				
+				actionconnect = solo.getView(R.id.action_connect);
+				solo.clickOnView(actionconnect);				
+			}
+			
+			testUtil.waitForCondition(new Condition() {
+					
+					@Override
+					public boolean compare() {
+						return !alertDialog.isShowing();
+					}
+				}, "!alertDialog.isShowing()" );
+			Assert.assertTrue(alertDialog.isShowing());
+				
+			ListView view  = devicePkr.getListView();
+			totalConnectableDevices = DiscoveryManager.getInstance().getCompatibleDevices().values().size();
+			
+			int waitCount = 0;			
+			while(view.getCount() < totalConnectableDevices){					
+					if(waitCount > TestConstants.WAIT_COUNT){
+						break;
+					} else {
+					try {
+						Thread.sleep(TestConstants.WAIT_TIME_IN_MILLISECONDS);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					waitCount++;
+					}
+					Log.d("", "Waiting till count == 0 -----------------------------------"+waitCount);
+					}
+			
+				if(testUtil.verifyWifiConnected(cmngr) && null != view){
+					
+					count=view.getCount();
+					Assert.assertTrue(count >= 0);
+				
+			    }
+				return view;
+		
+	
+	}
+	public void testMediaPlayerWithNoDeviceConnected(){
 		
 		MediaPlayerFragment mediaplayerfragment = (MediaPlayerFragment) sectionAdapter.getFragment(0);
 		Button[] mediaButtons = mediaplayerfragment.buttons;
@@ -77,196 +119,277 @@ public class MediaPlayerFragmentTest extends
 			Assert.assertFalse(button.isEnabled());
 			
 		}
-	}*/
-	//correct
-/*	public void testMediaFragmentWithDeviceConnected() throws InterruptedException{
+	}
+	
+	
+	public void testMediaFragmentWithDeviceConnected() throws InterruptedException{
 		
 		  
-		    int count  = 0;
+		    
 			int i = 1;
 			List<String> capabilityList;
 			
 			while(true) {			
 			
-			devicePkr = ((MainActivity)getActivity()).dp;
-			Assert.assertNotNull(devicePkr);
-			
-			View actionconnect;
-			
-			if(!alertDialog.isShowing()){
+				ListView view = getViewCount();
+				if(i <= view.getCount()){
 				
-				actionconnect = solo.getView(R.id.action_connect);
-				solo.clickOnView(actionconnect);				
-				Thread.sleep(10000);
-				
-			}
-			
-			Assert.assertTrue(alertDialog.isShowing());
-				
-			ListView view = devicePkr.getListView();
-						
-			if(verifyWifiConnected() && null != view){
-				
-					count=view.getCount();
-					Assert.assertTrue(count >= 0);
-				
-			}
-			if(i <= count){
-				//Supports DIAL, DLNA, Netcast TV,webOS TV, Chromecast, Roku
-				
-					mTV = (ConnectableDevice) view.getItemAtPosition(i-1);
-					if(mTV.getFriendlyName().equalsIgnoreCase("[TV][LG]39LN5700-UH")
-							|| mTV.getFriendlyName().equalsIgnoreCase("Adnan TV")
-							|| mTV.getFriendlyName().equalsIgnoreCase("Apple TV")
-							|| mTV.getFriendlyName().equalsIgnoreCase("Chromecast-Connect-SDK")
-							|| mTV.getFriendlyName().equalsIgnoreCase("Roku 2 - 1RE3CM070007")){	
+					mTV = (ConnectableDevice) view.getItemAtPosition(i-1);	
 						
 					    solo.clickInList(i);
-						Thread.sleep(5000);
-					} else{
-						
-				        i++;
-						continue;
-					}
+						testUtil.waitForCondition(new Condition() {
+							
+							@Override
+							public boolean compare() {
+								return !mTV.isConnected();
+							}
+						}, "!mTV.isConnected()");
 					
 				} else {
 					break;
 				}
 				
 				
-				mTV = ((MainActivity)getActivity()).mTV;
+				//mTV = ((MainActivity)getActivity()).mTV;
 				Assert.assertTrue(mTV.isConnected());
 				Assert.assertFalse(mTV.getCapabilities().isEmpty());
 				
 				capabilityList = mTV.getCapabilities();	
 				
-				getAssignedMediaButtons();
+				testUtil.getAssignedMediaButtons(sectionAdapter);
 				
 					//Verify Photo or MediaPlayer.Display.Image Capability
-				    if(null != photo && capabilityList.contains("MediaPlayer.Display.Image")){
-				    	Assert.assertTrue(photo.isEnabled());						
+				    if(null != testUtil.photo && capabilityList.contains("MediaPlayer.Display.Image")){
+				    	Assert.assertTrue(testUtil.photo.isEnabled());						
 				    }
 				    
 				    //Verify Video or MediaPlayer.Play.Video Capability
-				    if(null != video && capabilityList.contains("MediaPlayer.Play.Video")){
-				    	Assert.assertTrue(video.isEnabled());
+				    if(null != testUtil.video && capabilityList.contains("MediaPlayer.Play.Video")){
+				    	Assert.assertTrue(testUtil.video.isEnabled());
 				    }
 				    
 				    //Verify Audio or MediaPlayer.Play.Audio Capability
-				    if(null != audio && capabilityList.contains("MediaPlayer.Play.Audio")){
-				    	Assert.assertTrue(audio.isEnabled());
+				    if(null != testUtil.audio && capabilityList.contains("MediaPlayer.Play.Audio")){
+				    	Assert.assertTrue(testUtil.audio.isEnabled());
 				    }
 				    
 				   
 				    //Verify Close or MediaPlayer.Close Capability
-				    if(null != close && capabilityList.contains("MediaPlayer.Close")){
-				    	Assert.assertFalse(close.isEnabled());
+				    if(null != testUtil.close && capabilityList.contains("MediaPlayer.Close")){
+				    	Assert.assertFalse(testUtil.close.isEnabled());
 				    	
-				    	if(null != photo && photo.isEnabled()){
-							solo.clickOnButton(photo.getText().toString());
-							Thread.sleep(10000);
-							Assert.assertTrue(close.isEnabled());
+				    	if(null != testUtil.photo && testUtil.photo.isEnabled()){
+							solo.clickOnButton(testUtil.photo.getText().toString());
+							//Thread.sleep(10000);
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Display_image);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Display_image");
+							Assert.assertTrue(testUtil.close.isEnabled());
 						}
 				    	//Verify Cloe button when Photo is clicked.
-						if(null != close && close.isEnabled()){
-							solo.clickOnButton(close.getText().toString());
-							Thread.sleep(1000);
-							Assert.assertFalse(close.isEnabled());
+						if(null != testUtil.close && testUtil.close.isEnabled()){
+							solo.clickOnButton(testUtil.close.getText().toString());
+							//Thread.sleep(1000);
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+							Assert.assertFalse(testUtil.close.isEnabled());
 						}
 				    }
 				    
 				  //Verify Play or MediaPlayer.Play Capability
-				    if(null != play && capabilityList.contains("MediaControl.Play")){
-				    	Assert.assertFalse(play.isEnabled());
+				    if(null != testUtil.play && capabilityList.contains("MediaControl.Play")){
+				    	Assert.assertFalse(testUtil.play.isEnabled());
 				    	
 				    	//Verify play button when video or audio is clicked.
-						if((null != video && video.isEnabled())){
-							solo.clickOnButton(video.getText().toString());
-							Thread.sleep(10000);
-							Assert.assertTrue(play.isEnabled());
+						if((null != testUtil.video && testUtil.video.isEnabled())){
+							solo.clickOnButton(testUtil.video.getText().toString());
+							//Thread.sleep(10000);
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video");
+							Assert.assertTrue(testUtil.play.isEnabled());
 						}
 						//Verify Cloe button when Photo is clicked.
-						if(null != close && close.isEnabled()){
-							solo.clickOnButton(close.getText().toString());
-							Thread.sleep(1000);
-							Assert.assertFalse(close.isEnabled());
+						if(null != testUtil.close && testUtil.close.isEnabled()){
+							solo.clickOnButton(testUtil.close.getText().toString());
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+							//Thread.sleep(1000);
+							Assert.assertFalse(testUtil.close.isEnabled());
 						}
 						
-						if((null != audio && audio.isEnabled())){
-							solo.clickOnButton(audio.getText().toString());
-							Thread.sleep(10000);
-							Assert.assertTrue(play.isEnabled());
+						if((null != testUtil.audio && testUtil.audio.isEnabled())){
+							solo.clickOnButton(testUtil.audio.getText().toString());
+							
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio");
+							//Thread.sleep(10000);
+							Assert.assertTrue(testUtil.play.isEnabled());
 						}
 						
 						//Verify Cloe button when Photo is clicked.
-						if(null != close && close.isEnabled()){
-							solo.clickOnButton(close.getText().toString());
-							Thread.sleep(1000);
-							Assert.assertFalse(close.isEnabled());
+						if(null != testUtil.close && testUtil.close.isEnabled()){
+							solo.clickOnButton(testUtil.close.getText().toString());
+							//Thread.sleep(1000);
+
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+							Assert.assertFalse(testUtil.close.isEnabled());
 						}
 						
 				    }
 				    
 				  //Verify Pause or MediaControl.Pause Capability
-				    if(null != pause && capabilityList.contains("MediaControl.Pause")){
-				    	Assert.assertFalse(pause.isEnabled());
+				    if(null != testUtil.pause && capabilityList.contains("MediaControl.Pause")){
+				    	Assert.assertFalse(testUtil.pause.isEnabled());
 				    	
 				    	//Verify play button when video or audio is clicked.
-						if((null != video && video.isEnabled())){
-							solo.clickOnButton(video.getText().toString());
-							Thread.sleep(10000);
-							Assert.assertTrue(pause.isEnabled());
+						if((null != testUtil.video && testUtil.video.isEnabled())){
+							solo.clickOnButton(testUtil.video.getText().toString());
+							//Thread.sleep(10000);
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video");
+							Assert.assertTrue(testUtil.pause.isEnabled());
 						}
 						//Verify Cloe button when Photo is clicked.
-						if(null != close && close.isEnabled()){
-							solo.clickOnButton(close.getText().toString());
-							Thread.sleep(1000);
-							Assert.assertFalse(close.isEnabled());
+						if(null != testUtil.close && testUtil.close.isEnabled()){
+							solo.clickOnButton(testUtil.close.getText().toString());
+							//Thread.sleep(1000);
+							
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+							Assert.assertFalse(testUtil.close.isEnabled());
 						}
 						
-						if((null != audio && audio.isEnabled())){
-							solo.clickOnButton(audio.getText().toString());
-							Thread.sleep(10000);
-							Assert.assertTrue(pause.isEnabled());
+						if((null != testUtil.audio && testUtil.audio.isEnabled())){
+							solo.clickOnButton(testUtil.audio.getText().toString());
+							//Thread.sleep(10000);
+
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio");
+							Assert.assertTrue(testUtil.pause.isEnabled());
 						}
 						
 						//Verify Cloe button when Photo is clicked.
-						if(null != close && close.isEnabled()){
-							solo.clickOnButton(close.getText().toString());
-							Thread.sleep(1000);
-							Assert.assertFalse(close.isEnabled());
+						if(null != testUtil.close && testUtil.close.isEnabled()){
+							solo.clickOnButton(testUtil.close.getText().toString());
+							//Thread.sleep(1000);
+							
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+							Assert.assertFalse(testUtil.close.isEnabled());
 						}
 				    	
 				    }
 				    
 				  //Verify Stop or MediaControl.Stop Capability
-				    if(null != stop && capabilityList.contains("MediaControl.Stop")){
-				    	Assert.assertFalse(stop.isEnabled());
+				    if(null != testUtil.stop && capabilityList.contains("MediaControl.Stop")){
+				    	Assert.assertFalse(testUtil.stop.isEnabled());
 				    	
 				    	//Verify play button when video or audio is clicked.
-						if((null != video && video.isEnabled())){
-							solo.clickOnButton(video.getText().toString());
-							Thread.sleep(10000);
-							Assert.assertTrue(stop.isEnabled());
+						if((null != testUtil.video && testUtil.video.isEnabled())){
+							solo.clickOnButton(testUtil.video.getText().toString());
+							//Thread.sleep(10000);
+
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video");
+							Assert.assertTrue(testUtil.stop.isEnabled());
 						}
 						//Verify Cloe button when Photo is clicked.
-						if(null != close && close.isEnabled()){
-							solo.clickOnButton(close.getText().toString());
-							Thread.sleep(1000);
-							Assert.assertFalse(close.isEnabled());
+						if(null != testUtil.close && testUtil.close.isEnabled()){
+							solo.clickOnButton(testUtil.close.getText().toString());
+							//Thread.sleep(1000);
+
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+							Assert.assertFalse(testUtil.close.isEnabled());
 						}
 						
-						if((null != audio && audio.isEnabled())){
-							solo.clickOnButton(audio.getText().toString());
-							Thread.sleep(10000);
-							Assert.assertTrue(stop.isEnabled());
+						if((null != testUtil.audio && testUtil.audio.isEnabled())){
+							solo.clickOnButton(testUtil.audio.getText().toString());
+							//Thread.sleep(10000);
+
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio");
+							Assert.assertTrue(testUtil.stop.isEnabled());
 						}
 						
 						//Verify Cloe button when Photo is clicked.
-						if(null != close && close.isEnabled()){
-							solo.clickOnButton(close.getText().toString());
-							Thread.sleep(1000);
-							Assert.assertFalse(close.isEnabled());
+						if(null != testUtil.close && testUtil.close.isEnabled()){
+							solo.clickOnButton(testUtil.close.getText().toString());
+							//Thread.sleep(1000);
+
+							testUtil.waitForCondition(new Condition() {
+								
+								@Override
+								public boolean compare() {
+									return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+								}
+							}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+							Assert.assertFalse(testUtil.close.isEnabled());
 						}
 				    }
 				    			   
@@ -274,68 +397,25 @@ public class MediaPlayerFragmentTest extends
 				actionconnect = solo.getView(R.id.action_connect);
 				solo.clickOnView(actionconnect);
 				
-				Thread.sleep(2000);
-				
+				//Thread.sleep(2000);
+
+				testUtil.waitForCondition(new Condition() {
+					
+					@Override
+					public boolean compare() {
+						return mTV.isConnected();
+					}
+				}, "mTV.isConnected()");
+
 				Assert.assertFalse(mTV.isConnected());
 		        i++;
 			}
 			
 			
-	}*/
-	
-	public boolean verifyWifiConnected(){
-		
-		boolean wifiConnected = false;
-		
-		if(cmngr.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI){
-			Assert.assertEquals(ConnectivityManager.TYPE_WIFI, cmngr.getActiveNetworkInfo().getType());
-			
-			if(cmngr.getActiveNetworkInfo().isConnected()){
-				Assert.assertTrue(cmngr.getActiveNetworkInfo().isConnected());
-				wifiConnected = true;
-			}
-		}
-		return wifiConnected;
 	}
 	
-	public void getAssignedMediaButtons(){
 		
-		MediaPlayerFragment mediaplayerfragment = (MediaPlayerFragment) sectionAdapter.getFragment(0);
-		Button[] mediaButtons = mediaplayerfragment.buttons;
-		Assert.assertTrue(mediaButtons.length > 0);
-		
-		for (Button button : mediaButtons) {
-			
-			Assert.assertNotNull(button.getText());
-			
-			if(button.getText().equals("Photo")){
-				this.photo = button;
-			}
-			if(button.getText().equals("Video")){
-				this.video = button;
-			}
-			if(button.getText().equals("Audio")){
-				this.audio = button;
-			}
-			if(button.getText().equals("Play")){
-				this.play = button;
-			}
-			if(button.getText().equals("Pause")){
-				this.pause = button;
-			}
-			if(button.getText().equals("Stop")){
-				this.stop = button;
-			}
-			if(button.getText().equals("Close")){
-				this.close = button;
-			}
-			if(button.getText().equals("mediaInfo")){
-				this.mediaInfo = button;
-			}
-		}
-	}
-	
-/*public void testMediaFragment(){
+public void testMediaFragment(){
 		
 		viewPager = ((MainActivity)getActivity()).mViewPager;
 		sectionAdapter = ((MainActivity)getActivity()).mSectionsPagerAdapter;
@@ -355,7 +435,6 @@ public class MediaPlayerFragmentTest extends
 		MediaPlayerFragment mediaplayerfragment = (MediaPlayerFragment) sectionAdapter.getFragment(0);
 		Button[] mediaButtons = mediaplayerfragment.buttons;
 		Assert.assertTrue(mediaButtons.length > 0);
-		Assert.assertTrue(mediaButtons.length == 10);
 		
 		for (Button button : mediaButtons) {
 			CharSequence label = button.getText();
@@ -365,183 +444,277 @@ public class MediaPlayerFragmentTest extends
 		}
 		
 				
-	}*/
+	}
 
 public void testDisplayImageWithDeviceConnected() throws InterruptedException{
 	
 	  
-    int count  = 0;
 	int i = 1;
 	List<String> capabilityList;
 	
 	while(true) {			
 	
-	devicePkr = ((MainActivity)getActivity()).dp;
-	Assert.assertNotNull(devicePkr);
+		ListView view = getViewCount();
 	
-	View actionconnect;
-	
-	if(!alertDialog.isShowing()){
-		
-		actionconnect = solo.getView(R.id.action_connect);
-		solo.clickOnView(actionconnect);				
-		Thread.sleep(10000);
-		
-	}
-	
-	Assert.assertTrue(alertDialog.isShowing());
-		
-	ListView view = devicePkr.getListView();
+		if(i <= view.getCount()){
 				
-	if(verifyWifiConnected() && null != view){
-		
-			count=view.getCount();
-			Assert.assertTrue(count >= 0);
-		
-	}
-	if(i <= count){
-				
+		 mTV = (ConnectableDevice) view.getItemAtPosition(i-1);	
 			    solo.clickInList(i);
-				Thread.sleep(10000);
+				//Thread.sleep(10000);
+			   
+				
+			   	testUtil.waitForCondition(new Condition() {
+					
+					@Override
+					public boolean compare() {
+						return !mTV.isConnected();
+					}
+				}, "!mTV.isConnected()");
 			
 		} else {
 			break;
 		}
 		
 		
-		mTV = ((MainActivity)getActivity()).mTV;
+		//mTV = ((MainActivity)getActivity()).mTV;
 		Assert.assertTrue(mTV.isConnected());
 		Assert.assertFalse(mTV.getCapabilities().isEmpty());
 		
 		capabilityList = mTV.getCapabilities();	
 		
-		getAssignedMediaButtons();
+		testUtil.getAssignedMediaButtons(sectionAdapter);
 		
 			//Verify Photo or MediaPlayer.Display.Image Capability
-		    if(null != photo && capabilityList.contains("MediaPlayer.Display.Image")){
-		    	Assert.assertTrue(photo.isEnabled());						
+		    if(null != testUtil.photo && capabilityList.contains("MediaPlayer.Display.Image")){
+		    	Assert.assertTrue(testUtil.photo.isEnabled());						
 		    }
 		    
 		    //Verify Video or MediaPlayer.Play.Video Capability
-		    if(null != video && capabilityList.contains("MediaPlayer.Play.Video")){
-		    	Assert.assertTrue(video.isEnabled());
+		    if(null != testUtil.video && capabilityList.contains("MediaPlayer.Play.Video")){
+		    	Assert.assertTrue(testUtil.video.isEnabled());
 		    }
 		    
 		    //Verify Audio or MediaPlayer.Play.Audio Capability
-		    if(null != audio && capabilityList.contains("MediaPlayer.Play.Audio")){
-		    	Assert.assertTrue(audio.isEnabled());
+		    if(null != testUtil.audio && capabilityList.contains("MediaPlayer.Play.Audio")){
+		    	Assert.assertTrue(testUtil.audio.isEnabled());
 		    }
 		    
 		   
 		    //Verify Close or MediaPlayer.Close Capability
-		    if(null != close && capabilityList.contains("MediaPlayer.Close")){
-		    	Assert.assertFalse(close.isEnabled());
+		    if(null != testUtil.close && capabilityList.contains("MediaPlayer.Close")){
+		    	Assert.assertFalse(testUtil.close.isEnabled());
 		    	
-		    	if(null != photo && photo.isEnabled()){
-					solo.clickOnButton(photo.getText().toString());
-					Thread.sleep(10000);
-					Assert.assertTrue(close.isEnabled());
+		    	if(null != testUtil.photo && testUtil.photo.isEnabled()){
+					solo.clickOnButton(testUtil.photo.getText().toString());
+					//Thread.sleep(10000);
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Display_image);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Display_image");
+					Assert.assertTrue(testUtil.close.isEnabled());
 				}
 		    	//Verify Cloe button when Photo is clicked.
-				if(null != close && close.isEnabled()){
-					solo.clickOnButton(close.getText().toString());
-					Thread.sleep(1000);
-					Assert.assertFalse(close.isEnabled());
+				if(null != testUtil.close && testUtil.close.isEnabled()){
+					solo.clickOnButton(testUtil.close.getText().toString());
+					//Thread.sleep(1000);
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+					Assert.assertFalse(testUtil.close.isEnabled());
 				}
 		    }
 		    
 		  //Verify Play or MediaPlayer.Play Capability
-		    if(null != play && capabilityList.contains("MediaControl.Play")){
-		    	Assert.assertFalse(play.isEnabled());
+		    if(null != testUtil.play && capabilityList.contains("MediaControl.Play")){
+		    	Assert.assertFalse(testUtil.play.isEnabled());
 		    	
 		    	//Verify play button when video or audio is clicked.
-				if((null != video && video.isEnabled())){
-					solo.clickOnButton(video.getText().toString());
-					Thread.sleep(10000);
-					Assert.assertTrue(play.isEnabled());
+				if((null != testUtil.video && testUtil.video.isEnabled())){
+					solo.clickOnButton(testUtil.video.getText().toString());
+					//Thread.sleep(10000);
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video");
+					Assert.assertTrue(testUtil.play.isEnabled());
 				}
 				//Verify Cloe button when Photo is clicked.
-				if(null != close && close.isEnabled()){
-					solo.clickOnButton(close.getText().toString());
-					Thread.sleep(1000);
-					Assert.assertFalse(close.isEnabled());
+				if(null != testUtil.close && testUtil.close.isEnabled()){
+					solo.clickOnButton(testUtil.close.getText().toString());
+					//Thread.sleep(1000);
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+					Assert.assertFalse(testUtil.close.isEnabled());
 				}
 				
-				if((null != audio && audio.isEnabled())){
-					solo.clickOnButton(audio.getText().toString());
-					Thread.sleep(10000);
-					Assert.assertTrue(play.isEnabled());
+				if((null != testUtil.audio && testUtil.audio.isEnabled())){
+					solo.clickOnButton(testUtil.audio.getText().toString());
+					//Thread.sleep(10000);
+
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio");
+					Assert.assertTrue(testUtil.play.isEnabled());
 				}
 				
 				//Verify Cloe button when Photo is clicked.
-				if(null != close && close.isEnabled()){
-					solo.clickOnButton(close.getText().toString());
-					Thread.sleep(1000);
-					Assert.assertFalse(close.isEnabled());
+				if(null != testUtil.close && testUtil.close.isEnabled()){
+					solo.clickOnButton(testUtil.close.getText().toString());
+					//Thread.sleep(1000);
+
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+					Assert.assertFalse(testUtil.close.isEnabled());
 				}
 				
 		    }
 		    
 		  //Verify Pause or MediaControl.Pause Capability
-		    if(null != pause && capabilityList.contains("MediaControl.Pause")){
-		    	Assert.assertFalse(pause.isEnabled());
+		    if(null != testUtil.pause && capabilityList.contains("MediaControl.Pause")){
+		    	Assert.assertFalse(testUtil.pause.isEnabled());
 		    	
 		    	//Verify play button when video or audio is clicked.
-				if((null != video && video.isEnabled())){
-					solo.clickOnButton(video.getText().toString());
-					Thread.sleep(10000);
-					Assert.assertTrue(pause.isEnabled());
+				if((null != testUtil.video && testUtil.video.isEnabled())){
+					solo.clickOnButton(testUtil.video.getText().toString());
+					//Thread.sleep(10000);
+
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video");
+					Assert.assertTrue(testUtil.pause.isEnabled());
 				}
 				//Verify Cloe button when Photo is clicked.
-				if(null != close && close.isEnabled()){
-					solo.clickOnButton(close.getText().toString());
-					Thread.sleep(1000);
-					Assert.assertFalse(close.isEnabled());
+				if(null != testUtil.close && testUtil.close.isEnabled()){
+					solo.clickOnButton(testUtil.close.getText().toString());
+					//Thread.sleep(1000);
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+					Assert.assertFalse(testUtil.close.isEnabled());
 				}
 				
-				if((null != audio && audio.isEnabled())){
-					solo.clickOnButton(audio.getText().toString());
-					Thread.sleep(10000);
-					Assert.assertTrue(pause.isEnabled());
+				if((null != testUtil.audio && testUtil.audio.isEnabled())){
+					solo.clickOnButton(testUtil.audio.getText().toString());
+					//Thread.sleep(10000);
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio");
+					Assert.assertTrue(testUtil.pause.isEnabled());
 				}
 				
 				//Verify Cloe button when Photo is clicked.
-				if(null != close && close.isEnabled()){
-					solo.clickOnButton(close.getText().toString());
-					Thread.sleep(1000);
-					Assert.assertFalse(close.isEnabled());
+				if(null != testUtil.close && testUtil.close.isEnabled()){
+					solo.clickOnButton(testUtil.close.getText().toString());
+					//Thread.sleep(1000);
+
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+					Assert.assertFalse(testUtil.close.isEnabled());
 				}
 		    	
 		    }
 		    
 		  //Verify Stop or MediaControl.Stop Capability
-		    if(null != stop && capabilityList.contains("MediaControl.Stop")){
-		    	Assert.assertFalse(stop.isEnabled());
+		    if(null != testUtil.stop && capabilityList.contains("MediaControl.Stop")){
+		    	Assert.assertFalse(testUtil.stop.isEnabled());
 		    	
 		    	//Verify play button when video or audio is clicked.
-				if((null != video && video.isEnabled())){
-					solo.clickOnButton(video.getText().toString());
-					Thread.sleep(10000);
-					Assert.assertTrue(stop.isEnabled());
+				if((null != testUtil.video && testUtil.video.isEnabled())){
+					solo.clickOnButton(testUtil.video.getText().toString());
+					//Thread.sleep(10000);
+
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Video");
+					Assert.assertTrue(testUtil.stop.isEnabled());
 				}
 				//Verify Cloe button when Photo is clicked.
-				if(null != close && close.isEnabled()){
-					solo.clickOnButton(close.getText().toString());
-					Thread.sleep(1000);
-					Assert.assertFalse(close.isEnabled());
+				if(null != testUtil.close && testUtil.close.isEnabled()){
+					solo.clickOnButton(testUtil.close.getText().toString());
+					//Thread.sleep(1000);
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+					Assert.assertFalse(testUtil.close.isEnabled());
 				}
 				
-				if((null != audio && audio.isEnabled())){
-					solo.clickOnButton(audio.getText().toString());
-					Thread.sleep(10000);
-					Assert.assertTrue(stop.isEnabled());
+				if((null != testUtil.audio && testUtil.audio.isEnabled())){
+					solo.clickOnButton(testUtil.audio.getText().toString());
+					//Thread.sleep(10000);
+
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Play_Audio");
+					Assert.assertTrue(testUtil.stop.isEnabled());
 				}
 				
 				//Verify Cloe button when Photo is clicked.
-				if(null != close && close.isEnabled()){
-					solo.clickOnButton(close.getText().toString());
-					Thread.sleep(1000);
-					Assert.assertFalse(close.isEnabled());
+				if(null != testUtil.close && testUtil.close.isEnabled()){
+					solo.clickOnButton(testUtil.close.getText().toString());
+					//Thread.sleep(1000);
+
+
+					testUtil.waitForCondition(new Condition() {
+						
+						@Override
+						public boolean compare() {
+							return !mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media);
+						}
+					}, "!mediaplayerfragment.testResponse.responseMessage.equalsIgnoreCase(TestResponseObject.Closed_Media");
+					Assert.assertFalse(testUtil.close.isEnabled());
 				}
 		    }
 		    			   
@@ -549,7 +722,15 @@ public void testDisplayImageWithDeviceConnected() throws InterruptedException{
 		actionconnect = solo.getView(R.id.action_connect);
 		solo.clickOnView(actionconnect);
 		
-		Thread.sleep(2000);
+		//Thread.sleep(2000);
+		
+		testUtil.waitForCondition(new Condition() {
+			
+			@Override
+			public boolean compare() {
+				return mTV.isConnected();
+			}
+		}, "mTV.isConnected()");
 		
 		Assert.assertFalse(mTV.isConnected());
         i++;
