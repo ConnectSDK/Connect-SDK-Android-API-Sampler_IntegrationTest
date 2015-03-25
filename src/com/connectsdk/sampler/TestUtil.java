@@ -18,6 +18,7 @@ import com.connectsdk.sampler.fragments.SystemFragment;
 import com.connectsdk.sampler.fragments.TVFragment;
 import com.connectsdk.sampler.fragments.WebAppFragment;
 import com.connectsdk.service.AirPlayService;
+import com.connectsdk.service.CastService;
 import com.connectsdk.service.DIALService;
 import com.connectsdk.service.DLNAService;
 import com.connectsdk.service.DeviceService;
@@ -34,6 +35,7 @@ public class TestUtil extends ActivityInstrumentationTestCase2<MainActivity> {
 	List<ConnectableDevice> deviceWithDIALService = new ArrayList<ConnectableDevice>();
 	List<ConnectableDevice> deviceWithNetcastTVService = new ArrayList<ConnectableDevice>();
 	List<ConnectableDevice> deviceWithRokuService = new ArrayList<ConnectableDevice>();
+	List<ConnectableDevice> deviceWithChromecastService = new ArrayList<ConnectableDevice>();
 	
 	List<ConnectableDevice> deviceWithImageDisplayCapability = new ArrayList<ConnectableDevice>();
 	
@@ -197,6 +199,11 @@ public void getDeviceWithServices(Collection<ConnectableDevice> devices) throws 
 			 if(RokuService.class.isAssignableFrom(service.getClass())) {					
 				 deviceWithRokuService.add(device);
 				 Log.d("", "************Device Added to deviceWithRokuService**************");
+				 Assert.assertFalse(service.isConnected());
+				}
+			 if(CastService.class.isAssignableFrom(service.getClass())) {					
+				 deviceWithChromecastService.add(device);
+				 Log.d("", "************Device Added to deviceWithChromecastService**************");
 				 Assert.assertFalse(service.isConnected());
 				}
 			 
@@ -517,22 +524,6 @@ public void getAssignedKeyControlButtons(SectionsPagerAdapter sectionAdapter){
 	
 }
 
-public void getDeviceWithCapabilities(Collection<ConnectableDevice> devices){
-	
-	/*List<ConnectableDevice> deviceWithImageDisplayCapability = new ArrayList<ConnectableDevice>();*/
-		
-	for (ConnectableDevice device : devices) {
-		
-		 if (device.hasCapability(MediaPlayer.Display_Image)){
- 			String name = device.getFriendlyName();
- 			deviceWithImageDisplayCapability.add(device);
- 		 }
-		
-		//this.deviceWithImageDisplayCapability = deviceWithImageDisplayCapability;
-		
-	}
-	
-}
 
 /*public ListView getViewCount(){
 	
